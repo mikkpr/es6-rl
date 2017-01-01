@@ -1,0 +1,26 @@
+@import "settings";
+@import "mixins";
+@import "typography";
+@import "components";
+
+*, *::before, *::after {
+	box-sizing: inherit;
+}
+
+:root {
+	background: black;
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	text-align: center;
+}
+
+.container {
+	padding: 30px;
+}
+
+canvas {
+	border: 1px solid rgba(white, .5);
+}
