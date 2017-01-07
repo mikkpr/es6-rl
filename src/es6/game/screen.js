@@ -4,6 +4,7 @@ import Map from './map';
 import Entity from './entity';
 import { PlayerTemplate } from './templates';
 import Game from './index';
+import { vsprintf } from 'sprintf-js';
 
 const StartScreen = {
   enter: () => console.log('Entered StartScreen'),
@@ -82,6 +83,7 @@ const PlayScreen = {
       this._map.getHeight() - screenHeight
     );
 
+    // draw map tiles
     for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
       for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
         const tile = this._map.getTile(x, y);
@@ -94,6 +96,8 @@ const PlayScreen = {
         );
       }
     }
+
+    // draw entities
     const entities = this._map.getEntities();
     entities.forEach(entity => {
       if (entity.getX() >= topLeftX && entity.getY() >= topLeftY && entity.getX() < topLeftX + screenWidth && entity.getY() < topLeftY + screenHeight) {
@@ -107,6 +111,7 @@ const PlayScreen = {
       }
     });
 
+    // draw messages
     const messages = this._player.getMessages();
     let messageY = 0;
     messages.forEach(message => {
@@ -116,6 +121,11 @@ const PlayScreen = {
         `%c{white}%b{black}${message}`
       );
     });
+
+    // draw player stats
+    let stats = vsprintf('HP: %d/%d ', [this._player.getHP(), this._player.getMaxHP()]);
+    stats = `%c{white}%b{black}${stats}`;
+    display.drawText(0, screenHeight, stats);
   },
 
   handleInput(type, event) {

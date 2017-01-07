@@ -20,7 +20,7 @@ export const Game = {
   _screenHeight: displayDefaults.height,
 
   init(options) {
-    this._display = new ROT.Display(Object.assign({}, displayDefaults, options));
+    this._display = new ROT.Display(Object.assign({}, displayDefaults, options, { height: this._screenHeight + 1 }));
     const _game = this;
     const bindEventToScreen = (event) => {
       window.addEventListener(event, (e) => {
@@ -51,7 +51,6 @@ export const Game = {
   },
 
   switchScreen(screen) {
-    console.log('switchScreen', screen);
     if (this._currentScreen !== null) {
       this._currentScreen.exit();
     }
