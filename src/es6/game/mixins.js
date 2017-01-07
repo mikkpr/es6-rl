@@ -1,6 +1,8 @@
 import Entity from './entity';
 import { FungusTemplate } from './templates';
 
+import Game from './index';
+
 export const Moveable = {
   name: 'Moveable',
   tryMove(x, y, map) {
@@ -31,8 +33,9 @@ export const PlayerActor = {
   groupName: 'Actor',
 
   act() {
-    // GAME.refresh();
+    Game.refresh();
     this.getMap().getEngine().lock();
+    this.clearMessages();
   },
 };
 
@@ -54,6 +57,8 @@ export const FungusActor = {
             entity.setY(this.getY() + yOffset);
             this.getMap().addEntity(entity);
             this._growthsRemaining--;
+
+            Game.sendMessageNearby(this.getMap(), entity.getX(), entity.getY(), 'The fungus is spreading!');
           }
         }
       }
@@ -63,12 +68,28 @@ export const FungusActor = {
 
 export const Destructible = {
   name: 'Destructible',
-  init() {
-    this._hp = 1;
+  init(template) {
+    this._maxHP = template.maxHP || 10;
+    this._HP = template.HP || this._maxHP;
+
+    this._defenseValue = template.defenseValue || 0;
+  },
+  getHP() {
+    return this._HP;
+  },
+  getMaxHP() {
+    return this._maxHP;
+  },
+  getDefenseValue() {
+    return this._defenseValue;
   },
   takeDamage(attacker, damage) {
-    this._hp -= damage;
-    if (this._hp <= 0) {
+    this._HP -= damage;
+
+    if (this._HP <= 0) {
+      Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
+      Game.sendMessage(this, 'You die!');
+
       this.getMap().removeEntity(this);
     }
   },
@@ -82,12 +103,42 @@ export const Digger = {
   },
 };
 
-export const SimpleAttacker = {
-  name: 'SimpleAttacker',
+export const Attacker = {
+  name: 'Attacker',
   groupName: 'Attacker',
+  init(template) {
+    this._attackValue = template.attackValue || 1;
+  },
+  getAttackValue() {
+    return this._attackValue;
+  },
   attack(target) {
     if (target.hasMixin('Destructible')) {
-      target.takeDamage(this, 1);
+      let attack = this.getAttackValue();
+      let defense = target.getDefenseValue();
+      let max = Math.max(0, attack - defense);
+      let damage = 1 + Math.floor(Math.random() * max);
+
+      Game.sendMessage(this, 'You strike the %s for %d damage!', [target.getName(), damage]);
+      Game.sendMessage(target, 'The %s strikes you for %d damage!', [this.getName(), damage]);
+
+      target.takeDamage(this, damage);
     }
+  },
+};
+
+export const MessageRecipient = {
+  name: 'MessageRecipient',
+  init(template) {
+    this._messages = [];
+  },
+  receiveMessage(message) {
+    this._messages.push(message);
+  },
+  getMessages() {
+    return this._messages;
+  },
+  clearMessages() {
+    this._messages = [];
   },
 };

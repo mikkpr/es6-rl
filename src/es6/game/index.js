@@ -1,5 +1,8 @@
 import ROT from 'rot-js';
+import { vsprintf } from 'sprintf-js';
+
 import Screen from './screen';
+import { MessageRecipient } from './mixins';
 
 const displayDefaults = {
   width: 80,
@@ -8,7 +11,7 @@ const displayDefaults = {
   forceSquareRatio: true,
 };
 
-const Game = {
+export const Game = {
   Screen,
 
   _display: null,
@@ -22,7 +25,7 @@ const Game = {
     const bindEventToScreen = (event) => {
       window.addEventListener(event, (e) => {
         if (_game._currentScreen !== null) {
-          _game._currentScreen.handleInput(event, e, _game);
+          _game._currentScreen.handleInput(event, e);
         }
       });
     };
@@ -32,7 +35,7 @@ const Game = {
 
   refresh() {
     this._display.clear();
-    this._currentScreen.render(this._display, this);
+    this._currentScreen.render(this._display);
   },
 
   getDisplay() {
@@ -48,6 +51,7 @@ const Game = {
   },
 
   switchScreen(screen) {
+    console.log('switchScreen', screen);
     if (this._currentScreen !== null) {
       this._currentScreen.exit();
     }
@@ -61,6 +65,30 @@ const Game = {
       this.refresh();
     }
   },
+  sendMessage(recipient, message, args) {
+    let msg;
+    if (recipient.hasMixin(MessageRecipient)) {
+      if (args) {
+        msg = vsprintf(message, args);
+      } else {
+        msg = message;
+      }
+      recipient.receiveMessage(msg);
+    }
+  },
+  sendMessageNearby(map, x, y, message, args) {
+    let msg = message;
+    if (args) {
+      msg = vsprintf(message, args);
+    }
+
+    const entities = map.getEntitiesWithinRadius(x, y, 5);
+    entities.forEach(e => {
+      if (e.hasMixin(MessageRecipient)) {
+        e.receiveMessage(msg);
+      }
+    });
+  },
 };
 
-export default Game;
+export default Game.init();

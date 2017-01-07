@@ -72,6 +72,25 @@ export default class Map {
     return null;
   }
 
+  getEntitiesWithinRadius(centerX, centerY, radius) {
+    const results = [];
+    const leftX = centerX - radius;
+    const rightX = centerX + radius;
+    const topY = centerY - radius;
+    const bottomY = centerY + radius;
+
+    for (let i = 0; i < this._entities.length; i++) {
+      const entity = this._entities[i];
+      if (entity.getX() >= leftX &&
+        entity.getX() <= rightX &&
+        entity.getY() >= topY &&
+        entity.getY() <= bottomY) {
+          results.push(entity);
+        }
+    }
+    return results;
+  }
+
   addEntity(entity) {
     if (entity.getX() < 0 || entity.getX() >= this._width || entity.getY() < 0 || entity.getY() >= this._height) {
       throw new Error('Adding entity out of bounds.');

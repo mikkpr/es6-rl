@@ -1,9 +1,9 @@
-import { applyMiddleware, createStore } from 'redux';
-import createLogger from 'redux-logger';
-import ROT from 'rot-js';
+// import { applyMiddleware, createStore } from 'redux';
+// import createLogger from 'redux-logger';
+// import ROT from 'rot-js';
 
-import gameReducer from './reducers';
-import initialState from './initialState';
+// import gameReducer from './reducers';
+// import initialState from './initialState';
 
 import Game from './game';
 
@@ -14,10 +14,9 @@ import Game from './game';
   //   applyMiddleware(createLogger())
   // );
 
-  const GAME = Game.init();
-  GAME.switchScreen(GAME.Screen.StartScreen);
+  Game.switchScreen(Game.Screen.StartScreen);
 
-  const mainDisplay = GAME.getDisplay();
+  const mainDisplay = Game.getDisplay();
   // const gameConsole = new ROT.Display({
   //   width: 45,
   //   height: 10,

@@ -3,6 +3,7 @@ import { NullTile, WallTile, FloorTile } from './tile';
 import Map from './map';
 import Entity from './entity';
 import { PlayerTemplate } from './templates';
+import Game from './index';
 
 const StartScreen = {
   enter: () => console.log('Entered StartScreen'),
@@ -11,10 +12,10 @@ const StartScreen = {
     display.drawText(1, 1, '%c{yellow}Javascript Roguelike');
     display.drawText(1, 2, 'Press [Enter] to start!');
   },
-  handleInput: (type, event, game) => {
+  handleInput: (type, event) => {
     if (type === 'keydown') {
       if (event.keyCode === ROT.VK_RETURN) {
-        game.switchScreen(PlayScreen);
+        Game.switchScreen(PlayScreen);
       }
     }
   },
@@ -62,9 +63,9 @@ const PlayScreen = {
     this._player.tryMove(newX, newY, this._map);
   },
 
-  render(display, game) {
-    const screenWidth = game.getScreenWidth();
-    const screenHeight = game.getScreenHeight();
+  render(display) {
+    const screenWidth = Game.getScreenWidth();
+    const screenHeight = Game.getScreenHeight();
 
     const topLeftX = Math.min(
       Math.max(
@@ -94,8 +95,7 @@ const PlayScreen = {
       }
     }
     const entities = this._map.getEntities();
-    for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i];
+    entities.forEach(entity => {
       if (entity.getX() >= topLeftX && entity.getY() >= topLeftY && entity.getX() < topLeftX + screenWidth && entity.getY() < topLeftY + screenHeight) {
         display.draw(
           entity.getX() - topLeftX,
@@ -105,15 +105,25 @@ const PlayScreen = {
           entity.getBackground()
         );
       }
-    }
+    });
+
+    const messages = this._player.getMessages();
+    let messageY = 0;
+    messages.forEach(message => {
+      messageY += display.drawText(
+        0,
+        messageY,
+        `%c{white}%b{black}${message}`
+      );
+    });
   },
 
-  handleInput(type, event, game) {
+  handleInput(type, event) {
     if (type === 'keydown') {
       if (event.keyCode === ROT.VK_RETURN) {
-        game.switchScreen(WinScreen);
+        Game.switchScreen(WinScreen);
       } else if (event.keyCode === ROT.VK_ESCAPE) {
-        game.switchScreen(LoseScreen);
+        Game.switchScreen(LoseScreen);
       } else {
         // movement
         if (event.keyCode === ROT.VK_LEFT) {
@@ -126,7 +136,6 @@ const PlayScreen = {
           this.move(0, 1);
         }
         this._map.getEngine().unlock();
-        game.refresh();
       }
     }
   },
@@ -149,7 +158,7 @@ const WinScreen = {
       display.drawText(2, i + 1, `%b{${background}}You win!`);
     }
   },
-  handleInput: (type, event, game) => { },
+  handleInput: (type, event) => { },
 };
 
 const LoseScreen = {
@@ -160,7 +169,7 @@ const LoseScreen = {
       display.drawText(2, i + 1, '%b{red}You lose! :(');
     }
   },
-  handleInput: (type, event, game) => { },
+  handleInput: (type, event) => { },
 };
 
 export default {

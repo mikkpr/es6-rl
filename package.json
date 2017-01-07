@@ -29,6 +29,7 @@
   "dependencies": {
     "redux": "^3.6.0",
     "redux-logger": "^2.7.4",
-    "rot-js": "^0.6.2"
+    "rot-js": "^0.6.2",
+    "sprintf-js": "^1.0.3"
   }
 }
