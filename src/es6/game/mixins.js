@@ -1,3 +1,6 @@
+import Entity from './entity';
+import { FungusTemplate } from './templates';
+
 export const Moveable = {
   name: 'Moveable',
   tryMove(x, y, map) {
@@ -36,7 +39,26 @@ export const PlayerActor = {
 export const FungusActor = {
   name: 'FungusActor',
   groupName: 'Actor',
-  act() {},
+  init() {
+    this._growthsRemaining = 5;
+  },
+  act() {
+    if (this._growthsRemaining > 0) {
+      if (Math.random() <= 0.02) {
+        const xOffset = Math.floor(Math.random() * 3) - 1;
+        const yOffset = Math.floor(Math.random() * 3) - 1;
+        if (xOffset !== 0 || yOffset !== 0) {
+          if (this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset)) {
+            const entity = new Entity(FungusTemplate);
+            entity.setX(this.getX() + xOffset);
+            entity.setY(this.getY() + yOffset);
+            this.getMap().addEntity(entity);
+            this._growthsRemaining--;
+          }
+        }
+      }
+    }
+  },
 };
 
 export const Destructible = {

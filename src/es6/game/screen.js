@@ -25,8 +25,8 @@ const PlayScreen = {
   _player: null,
 
   enter() {
-    const mapWidth = 150;
-    const mapHeight = 150;
+    const mapWidth = 100;
+    const mapHeight = 48;
     const generator = new ROT.Map.Cellular(mapWidth, mapHeight);
     const totalIterations = 3;
     const map = [];
