@@ -8,11 +8,11 @@ import initialState from './initialState';
 import Game from './game';
 
 ((window, console) => {
-  window.STATE = createStore(
-    gameReducer,
-    initialState,
-    applyMiddleware(createLogger())
-  );
+  // window.STATE = createStore(
+  //   gameReducer,
+  //   initialState,
+  //   applyMiddleware(createLogger())
+  // );
 
   const GAME = Game.init();
   GAME.switchScreen(GAME.Screen.StartScreen);

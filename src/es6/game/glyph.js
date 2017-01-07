@@ -1,8 +1,8 @@
 export default class Glyph {
-  constructor(char, fg, bg) {
-    this._char = char || ' ';
-    this._fg = fg || 'white';
-    this._bg = bg || 'black';
+  constructor(properties = {}) {
+    this._char = properties.char || ' ';
+    this._fg = properties.fg || 'white';
+    this._bg = properties.bg || 'black';
   }
 
   getChar() {

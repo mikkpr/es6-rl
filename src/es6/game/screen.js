@@ -1,6 +1,8 @@
 import ROT from 'rot-js';
 import { NullTile, WallTile, FloorTile } from './tile';
 import Map from './map';
+import Entity from './entity';
+import { PlayerTemplate } from './templates';
 
 const StartScreen = {
   enter: () => console.log('Entered StartScreen'),
@@ -20,12 +22,11 @@ const StartScreen = {
 
 const PlayScreen = {
   _map: null,
-  _centerX: 0,
-  _centerY: 0,
+  _player: null,
 
   enter() {
-    const mapWidth = 250;
-    const mapHeight = 250;
+    const mapWidth = 150;
+    const mapHeight = 150;
     const generator = new ROT.Map.Cellular(mapWidth, mapHeight);
     const totalIterations = 3;
     const map = [];
@@ -48,29 +49,17 @@ const PlayScreen = {
         map[x][y] = WallTile;
       }
     });
-    // Create our map from the tiles
-    this._map = new Map(map);
+
+    this._player = new Entity(PlayerTemplate);
+    this._map = new Map(map, this._player);
+    this._map.getEngine().start();
   },
 
   move(dX, dY) {
-    this._centerX = Math.max(
-      0,
-      Math.min(
-        this._map.getWidth() - 1,
-        this._centerX + dX
-      )
-    );
-    this._centerY = Math.max(
-      0,
-      Math.min(
-        this._map.getHeight() - 1,
-        this._centerY + dY
-      )
-    );
-  },
+    const newX = this._player.getX() + dX;
+    const newY = this._player.getY() + dY;
 
-  exit() {
-    console.log('Exited PlayScreen');
+    this._player.tryMove(newX, newY, this._map);
   },
 
   render(display, game) {
@@ -80,37 +69,43 @@ const PlayScreen = {
     const topLeftX = Math.min(
       Math.max(
         0,
-        this._centerX - (screenWidth / 2)
+        this._player.getX() - (screenWidth / 2)
       ),
       this._map.getWidth() - screenWidth
     );
     const topLeftY = Math.min(
       Math.max(
         0,
-        this._centerY - (screenHeight / 2)
+        this._player.getY() - (screenHeight / 2)
       ),
       this._map.getHeight() - screenHeight
     );
 
     for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
       for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-        const glyph = this._map.getTile(x, y).getGlyph();
+        const tile = this._map.getTile(x, y);
         display.draw(
           x - topLeftX,
           y - topLeftY,
-          glyph.getChar(),
-          glyph.getForeground(),
-          glyph.getBackground()
+          tile.getChar(),
+          tile.getForeground(),
+          tile.getBackground()
         );
       }
     }
-    display.draw(
-      this._centerX - topLeftX,
-      this._centerY - topLeftY,
-      '@',
-      'white',
-      'black'
-    );
+    const entities = this._map.getEntities();
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      if (entity.getX() >= topLeftX && entity.getY() >= topLeftY && entity.getX() < topLeftX + screenWidth && entity.getY() < topLeftY + screenHeight) {
+        display.draw(
+          entity.getX() - topLeftX,
+          entity.getY() - topLeftY,
+          entity.getChar(),
+          entity.getForeground(),
+          entity.getBackground()
+        );
+      }
+    }
   },
 
   handleInput(type, event, game) {
@@ -119,19 +114,25 @@ const PlayScreen = {
         game.switchScreen(WinScreen);
       } else if (event.keyCode === ROT.VK_ESCAPE) {
         game.switchScreen(LoseScreen);
-      }
-
-      // movement
-      if (event.keyCode === ROT.VK_LEFT) {
-        this.move(-1, 0);
-      } else if (event.keyCode === ROT.VK_RIGHT) {
-        this.move(1, 0);
-      } else if (event.keyCode === ROT.VK_UP) {
-        this.move(0, -1);
-      } else if (event.keyCode === ROT.VK_DOWN) {
-        this.move(0, 1);
+      } else {
+        // movement
+        if (event.keyCode === ROT.VK_LEFT) {
+          this.move(-1, 0);
+        } else if (event.keyCode === ROT.VK_RIGHT) {
+          this.move(1, 0);
+        } else if (event.keyCode === ROT.VK_UP) {
+          this.move(0, -1);
+        } else if (event.keyCode === ROT.VK_DOWN) {
+          this.move(0, 1);
+        }
+        this._map.getEngine().unlock();
+        game.refresh();
       }
     }
+  },
+
+  exit() {
+    console.log('Exited PlayScreen');
   },
 };
 

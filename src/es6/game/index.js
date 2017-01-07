@@ -23,13 +23,16 @@ const Game = {
       window.addEventListener(event, (e) => {
         if (_game._currentScreen !== null) {
           _game._currentScreen.handleInput(event, e, _game);
-          _game._display.clear();
-          _game._currentScreen.render(_game._display, _game);
         }
       });
     };
     ['keydown', 'keyup', 'keypress'].forEach(bindEventToScreen);
     return this;
+  },
+
+  refresh() {
+    this._display.clear();
+    this._currentScreen.render(this._display, this);
   },
 
   getDisplay() {
@@ -55,7 +58,7 @@ const Game = {
 
     if (!this._currentScreen !== null) {
       this._currentScreen.enter();
-      this._currentScreen.render(this._display, this);
+      this.refresh();
     }
   },
 };

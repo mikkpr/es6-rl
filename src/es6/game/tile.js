@@ -1,15 +1,29 @@
 import Glyph from './glyph';
 
-export default class Tile {
-  constructor(glyph) {
-    this._glyph = glyph;
+export default class Tile extends Glyph {
+  constructor(properties = {}) {
+    super(properties);
+
+    this._isWalkable = properties.isWalkable || false;
+    this._isDiggable = properties.isDiggable || false;
   }
 
-  getGlyph() {
-    return this._glyph;
+  isWalkable() {
+    return this._isWalkable;
+  }
+
+  isDiggable() {
+    return this._isDiggable;
   }
 }
 
-export const NullTile = new Tile(new Glyph());
-export const FloorTile = new Tile(new Glyph('.'));
-export const WallTile = new Tile(new Glyph('#', 'goldenrod'));
+export const NullTile = new Tile({});
+export const FloorTile = new Tile({
+  char: '.',
+  isWalkable: true,
+});
+export const WallTile = new Tile({
+  char: '#',
+  fg: 'goldenrod',
+  isDiggable: true,
+});
