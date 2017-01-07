@@ -1,14 +1,14 @@
 import ROT from 'rot-js';
-import { NullTile, WallTile, FloorTile } from './tile';
 import Map from './map';
 import Entity from './entity';
 import { PlayerTemplate } from './templates';
 import Game from './index';
 import { vsprintf } from 'sprintf-js';
+import Builder from './builder';
 
 const StartScreen = {
-  enter: () => console.log('Entered StartScreen'),
-  exit: () => console.log('Exited StartScreen'),
+  enter: () => {},
+  exit: () => {},
   render: (display) => {
     display.drawText(1, 1, '%c{yellow}Javascript Roguelike');
     display.drawText(1, 2, 'Press [Enter] to start!');
@@ -27,41 +27,22 @@ const PlayScreen = {
   _player: null,
 
   enter() {
-    const mapWidth = 100;
-    const mapHeight = 48;
-    const generator = new ROT.Map.Cellular(mapWidth, mapHeight);
-    const totalIterations = 3;
-    const map = [];
-    for (let x = 0; x < mapWidth; x++) {
-      map.push([]);
-      for (let y = 0; y < mapHeight; y++) {
-        map[x].push(NullTile);
-      }
-    }
-    generator.randomize(0.5);
-    // Iteratively smoothen the map
-    for (let i = 0; i < totalIterations - 1; i++) {
-      generator.create();
-    }
-    // Smoothen it one last time and then update our map
-    generator.create((x, y, v) => {
-      if (v === 1) {
-        map[x][y] = FloorTile;
-      } else {
-        map[x][y] = WallTile;
-      }
-    });
+    const width = 100;
+    const height = 48;
+    const depth = 2;
 
+    const tiles = new Builder(width, height, depth).getTiles();
     this._player = new Entity(PlayerTemplate);
-    this._map = new Map(map, this._player);
+    this._map = new Map(tiles, this._player);
     this._map.getEngine().start();
   },
 
-  move(dX, dY) {
+  move(dX, dY, dZ) {
     const newX = this._player.getX() + dX;
     const newY = this._player.getY() + dY;
+    const newZ = this._player.getZ() + dZ;
 
-    this._player.tryMove(newX, newY, this._map);
+    this._player.tryMove(newX, newY, newZ, this._map);
   },
 
   render(display) {
@@ -86,7 +67,7 @@ const PlayScreen = {
     // draw map tiles
     for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
       for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-        const tile = this._map.getTile(x, y);
+        const tile = this._map.getTile(x, y, this._player.getZ());
         display.draw(
           x - topLeftX,
           y - topLeftY,
@@ -100,7 +81,13 @@ const PlayScreen = {
     // draw entities
     const entities = this._map.getEntities();
     entities.forEach(entity => {
-      if (entity.getX() >= topLeftX && entity.getY() >= topLeftY && entity.getX() < topLeftX + screenWidth && entity.getY() < topLeftY + screenHeight) {
+      if (
+        entity.getX() >= topLeftX &&
+        entity.getY() >= topLeftY &&
+        entity.getX() < topLeftX + screenWidth &&
+        entity.getY() < topLeftY + screenHeight &&
+        entity.getZ() === this._player.getZ()
+      ) {
         display.draw(
           entity.getX() - topLeftX,
           entity.getY() - topLeftY,
@@ -137,27 +124,37 @@ const PlayScreen = {
       } else {
         // movement
         if (event.keyCode === ROT.VK_LEFT) {
-          this.move(-1, 0);
+          this.move(-1, 0, 0);
         } else if (event.keyCode === ROT.VK_RIGHT) {
-          this.move(1, 0);
+          this.move(1, 0, 0);
         } else if (event.keyCode === ROT.VK_UP) {
-          this.move(0, -1);
+          this.move(0, -1, 0);
         } else if (event.keyCode === ROT.VK_DOWN) {
-          this.move(0, 1);
+          this.move(0, 1, 0);
+        } else {
+          return;
         }
         this._map.getEngine().unlock();
       }
+    } else if (type === 'keypress') {
+      const keyChar = String.fromCharCode(event.charCode);
+      if (keyChar === '>') {
+        this.move(0, 0, 1);
+      } else if (keyChar === '<') {
+        this.move(0, 0, -1);
+      } else {
+        return;
+      }
+      this._map.getEngine().unlock();
     }
   },
 
-  exit() {
-    console.log('Exited PlayScreen');
-  },
+  exit() { },
 };
 
 const WinScreen = {
-  enter: () => console.log('Entered WinScreen'),
-  exit: () => console.log('Exited WinScreen'),
+  enter: () => {},
+  exit: () => {},
   render: (display) => {
     for (let i = 0; i < 22; i++) {
       // Generate random background colors
@@ -168,18 +165,18 @@ const WinScreen = {
       display.drawText(2, i + 1, `%b{${background}}You win!`);
     }
   },
-  handleInput: (type, event) => { },
+  handleInput: () => { },
 };
 
 const LoseScreen = {
-  enter: () => console.log('Entered LoseScreen'),
-  exit: () => console.log('Exited LoseScreen'),
+  enter: () => {},
+  exit: () => {},
   render: (display) => {
     for (let i = 0; i < 22; i++) {
       display.drawText(2, i + 1, '%b{red}You lose! :(');
     }
   },
-  handleInput: (type, event) => { },
+  handleInput: () => { },
 };
 
 export default {

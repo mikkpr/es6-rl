@@ -1,26 +1,40 @@
 import Entity from './entity';
 import { FungusTemplate } from './templates';
+import { StairsUpTile, StairsDownTile } from './tile';
 
 import Game from './index';
 
 export const Moveable = {
   name: 'Moveable',
-  tryMove(x, y, map) {
-    const tile = map.getTile(x, y);
-    const target = map.getEntityAt(x, y);
+  tryMove(x, y, z, map) {
+    const tile = map.getTile(x, y, this.getZ());
+    const target = map.getEntityAt(x, y, this.getZ());
 
-    if (target) {
+    if (z < this.getZ()) {
+      if (tile !== StairsUpTile) {
+        Game.sendMessage(this, "You can't go up here!");
+      } else {
+        this.setPosition(x, y, z);
+        Game.sendMessage(this, 'You ascend to level %d', [z + 1]);
+      }
+    } else if (z > this.getZ()) {
+      if (tile !== StairsDownTile) {
+        Game.sendMessage(this, "You can't go down here!");
+      } else {
+        this.setPosition(x, y, z);
+        Game.sendMessage(this, 'You descend to level %d', [z + 1]);
+      }
+    } else if (target) {
       if (this.hasMixin('Attacker')) {
         this.attack(target);
         return true;
       }
     } else if (tile.isWalkable()) {
-      this._x = x;
-      this._y = y;
+      this.setPosition(x, y, z);
       return true;
     } else if (tile.isDiggable()) {
       if (this.hasMixin('Digger')) {
-        this.dig(x, y, map);
+        this.dig(x, y, z, map);
         return true;
       }
     }
@@ -50,15 +64,15 @@ export const FungusActor = {
       if (Math.random() <= 0.02) {
         const xOffset = Math.floor(Math.random() * 3) - 1;
         const yOffset = Math.floor(Math.random() * 3) - 1;
+
         if (xOffset !== 0 || yOffset !== 0) {
-          if (this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset)) {
+          if (this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset, this.getZ())) {
             const entity = new Entity(FungusTemplate);
-            entity.setX(this.getX() + xOffset);
-            entity.setY(this.getY() + yOffset);
+            entity.setPosition(this.getX() + xOffset, this.getY() + yOffset, this.getZ());
             this.getMap().addEntity(entity);
             this._growthsRemaining--;
 
-            Game.sendMessageNearby(this.getMap(), entity.getX(), entity.getY(), 'The fungus is spreading!');
+            Game.sendMessageNearby(this.getMap(), entity.getX(), entity.getY(), entity.getZ(), 'The fungus is spreading!');
           }
         }
       }
@@ -98,8 +112,8 @@ export const Destructible = {
 export const Digger = {
   name: 'SimpleDigger',
   groupName: 'Digger',
-  dig(x, y, map) {
-    map.dig(x, y);
+  dig(x, y, z, map) {
+    map.dig(x, y, z);
   },
 };
 
@@ -114,10 +128,10 @@ export const Attacker = {
   },
   attack(target) {
     if (target.hasMixin('Destructible')) {
-      let attack = this.getAttackValue();
-      let defense = target.getDefenseValue();
-      let max = Math.max(0, attack - defense);
-      let damage = 1 + Math.floor(Math.random() * max);
+      const attack = this.getAttackValue();
+      const defense = target.getDefenseValue();
+      const max = Math.max(0, attack - defense);
+      const damage = 1 + Math.floor(Math.random() * max);
 
       Game.sendMessage(this, 'You strike the %s for %d damage!', [target.getName(), damage]);
       Game.sendMessage(target, 'The %s strikes you for %d damage!', [this.getName(), damage]);

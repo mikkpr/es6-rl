@@ -27,3 +27,13 @@ export const WallTile = new Tile({
   fg: 'goldenrod',
   isDiggable: true,
 });
+export const StairsUpTile = new Tile({
+  char: '<',
+  fg: 'white',
+  isWalkable: true,
+});
+export const StairsDownTile = new Tile({
+  char: '>',
+  fg: 'white',
+  isWalkable: true,
+});

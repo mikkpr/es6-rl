@@ -5,8 +5,8 @@ import Screen from './screen';
 import { MessageRecipient } from './mixins';
 
 const displayDefaults = {
-  width: 80,
-  height: 24,
+  width: 40,
+  height: 40,
   fontSize: 15,
   forceSquareRatio: true,
 };
@@ -75,18 +75,31 @@ export const Game = {
       recipient.receiveMessage(msg);
     }
   },
-  sendMessageNearby(map, x, y, message, args) {
+  sendMessageNearby(map, x, y, z, message, args) {
     let msg = message;
     if (args) {
       msg = vsprintf(message, args);
     }
 
-    const entities = map.getEntitiesWithinRadius(x, y, 5);
+    const entities = map.getEntitiesWithinRadius(x, y, z, 5);
     entities.forEach(e => {
       if (e.hasMixin(MessageRecipient)) {
         e.receiveMessage(msg);
       }
     });
+  },
+
+  getNeighborPositions(x, y) {
+    const tiles = [];
+    for (let dX = -1; dX < 2; dX++) {
+      for (let dY = -1; dY < 2; dY++) {
+        if (dX === 0 && dY === 0) {
+          continue;
+        }
+        tiles.push({ x: x + dX, y: y + dY });
+      }
+    }
+    return tiles.randomize();
   },
 };
 

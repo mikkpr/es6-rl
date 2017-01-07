@@ -7,18 +7,21 @@ export default class Map {
   constructor(tiles, player) {
     // tiles
     this._tiles = tiles;
-    this._width = tiles.length;
-    this._height = tiles[0].length;
+    this._depth = tiles.length;
+    this._width = tiles[0].length;
+    this._height = tiles[0][0].length;
 
     // entities
     this._entities = [];
     this._scheduler = new ROT.Scheduler.Simple();
     this._engine = new ROT.Engine(this._scheduler);
 
-    this.addEntityAtRandomPosition(player);
+    this.addEntityAtRandomPosition(player, 0);
 
-    for (let i = 0; i < 50; i++) {
-      this.addEntityAtRandomPosition(new Entity(FungusTemplate));
+    for (let z = 0; z < this._depth; z++) {
+      for (let i = 0; i < 25; i++) {
+        this.addEntityAtRandomPosition(new Entity(FungusTemplate), z);
+      }
     }
   }
 
@@ -30,28 +33,35 @@ export default class Map {
     return this._height;
   }
 
-  getTile(x, y) {
+  getDepth() {
+    return this._depth;
+  }
+
+  getTile(x, y, z) {
     let ret = NullTile;
-    if (!(x < 0 || x >= this._width || y < 0 || y >= this.height)) {
-      ret = this._tiles[x][y] || ret;
+    if (x >= 0 && x < this._width &&
+      y >= 0 && y < this._height &&
+      z >= 0 && z < this._depth
+    ) {
+      ret = this._tiles[z][x][y] || ret;
     }
     return ret;
   }
 
-  dig(x, y) {
-    if (this.getTile(x, y).isDiggable()) {
-      this._tiles[x][y] = FloorTile;
+  dig(x, y, z) {
+    if (this.getTile(x, y, z).isDiggable()) {
+      this._tiles[z][x][y] = FloorTile;
     }
   }
 
-  getRandomFloorPosition() {
+  getRandomFloorPosition(z) {
     let x;
     let y;
     do {
       x = Math.floor(Math.random() * this._width);
       y = Math.floor(Math.random() * this._height);
-    } while (!this.isEmptyFloor(x, y));
-    return { x, y };
+    } while (!this.isEmptyFloor(x, y, z));
+    return { x, y, z };
   }
 
   getEngine() {
@@ -62,17 +72,17 @@ export default class Map {
     return this._entities;
   }
 
-  getEntityAt(x, y) {
+  getEntityAt(x, y, z) {
     for (let i = 0; i < this._entities.length; i++) {
-      let entity = this._entities[i];
-      if (entity.getX() == x && entity.getY() == y) {
+      const entity = this._entities[i];
+      if (entity.getX() === x && entity.getY() === y && entity.getZ() === z) {
         return entity;
       }
     }
     return null;
   }
 
-  getEntitiesWithinRadius(centerX, centerY, radius) {
+  getEntitiesWithinRadius(centerX, centerY, centerZ, radius) {
     const results = [];
     const leftX = centerX - radius;
     const rightX = centerX + radius;
@@ -84,7 +94,8 @@ export default class Map {
       if (entity.getX() >= leftX &&
         entity.getX() <= rightX &&
         entity.getY() >= topY &&
-        entity.getY() <= bottomY) {
+        entity.getY() <= bottomY &&
+        entity.getZ() === centerZ) {
           results.push(entity);
         }
     }
@@ -92,7 +103,11 @@ export default class Map {
   }
 
   addEntity(entity) {
-    if (entity.getX() < 0 || entity.getX() >= this._width || entity.getY() < 0 || entity.getY() >= this._height) {
+    if (
+      entity.getX() < 0 || entity.getX() >= this._width ||
+      entity.getY() < 0 || entity.getY() >= this._height ||
+      entity.getZ() < 0 || entity.getZ() >= this._depth
+    ) {
       throw new Error('Adding entity out of bounds.');
     }
 
@@ -104,16 +119,17 @@ export default class Map {
     }
   }
 
-  addEntityAtRandomPosition(entity) {
-    const position = this.getRandomFloorPosition();
+  addEntityAtRandomPosition(entity, z) {
+    const position = this.getRandomFloorPosition(z);
     entity.setX(position.x);
     entity.setY(position.y);
+    entity.setZ(position.z);
     this.addEntity(entity);
   }
 
   removeEntity(entity) {
     for (let i = 0; i < this._entities.length; i++) {
-      if (this._entities[i] == entity) {
+      if (this._entities[i] === entity) {
         this._entities.splice(i, 1);
         break;
       }
@@ -123,7 +139,7 @@ export default class Map {
     }
   }
 
-  isEmptyFloor(x, y) {
-    return this.getTile(x, y) == FloorTile && !this.getEntityAt(x, y);
+  isEmptyFloor(x, y, z) {
+    return this.getTile(x, y, z) == FloorTile && !this.getEntityAt(x, y, z);
   }
 }

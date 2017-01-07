@@ -7,6 +7,7 @@ export default class Entity extends Glyph {
     this._name = properties.name || '';
     this._x = properties.x || 0;
     this._y = properties.y || 0;
+    this._z = properties.z || 0;
     this._map = null;
 
     this._attachedMixins = {};
@@ -52,6 +53,10 @@ export default class Entity extends Glyph {
     this._y = y;
   }
 
+  setZ(z) {
+    this._z = z;
+  }
+
   getName() {
     return this._name;
   }
@@ -64,11 +69,21 @@ export default class Entity extends Glyph {
     return this._y;
   }
 
+  getZ() {
+    return this._z;
+  }
+
   setMap(map) {
     this._map = map;
   }
 
   getMap() {
     return this._map;
+  }
+
+  setPosition(x, y, z) {
+    this._x = x;
+    this._y = y;
+    this._z = z;
   }
 }
