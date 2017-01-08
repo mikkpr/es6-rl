@@ -13,6 +13,7 @@ export default class Map {
 
     // entities
     this._entities = [];
+
     this._scheduler = new ROT.Scheduler.Simple();
     this._engine = new ROT.Engine(this._scheduler);
 
@@ -27,6 +28,10 @@ export default class Map {
     // fov
     this._fov = [];
     this.setupFOV();
+
+    // exploration data
+    this._explored = new Array(this._depth);
+    this.setupExploredArray();
   }
 
   getWidth() {
@@ -163,6 +168,32 @@ export default class Map {
           )
         );
       })();
+    }
+  }
+
+  setupExploredArray() {
+    for (let z = 0; z < this._depth; z++) {
+      this._explored[z] = new Array(this._width);
+      for (let x = 0; x < this._width; x++) {
+        this._explored[z][x] = new Array(this._height);
+        for (let y = 0; y < this._height; y++) {
+          this._explored[z][x][y] = false;
+        }
+      }
+    }
+  }
+
+  setExplored(x, y, z, state) {
+    if (this.getTile(x, y, z) !== NullTile) {
+      this._explored[z][x][y] = state;
+    }
+  }
+
+  getExplored(x, y, z) {
+    if (this.getTile(x, y, z) !== NullTile) {
+      return this._explored[z][x][y];
+    } else {
+      return false;
     }
   }
 }

@@ -64,26 +64,31 @@ const PlayScreen = {
       this._map.getHeight() - screenHeight
     );
 
+    // calculate FOV and set explored tiles
     const visibleCells = {};
-    this._map.getFOV(this._player.getZ()).compute(
+    const map = this._map;
+    const currentDepth = this._player.getZ();
+    map.getFOV(currentDepth).compute(
       this._player.getX(),
       this._player.getY(),
       this._player.getSightRadius(),
       (x, y, radius, visibility) => {
         visibleCells[`${x},${y}`] = true;
+        map.setExplored(x, y, currentDepth, true);
       }
     );
 
     // draw map tiles
     for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
       for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-        if (visibleCells[`${x},${y}`]) {
-          const tile = this._map.getTile(x, y, this._player.getZ());
+        if (map.getExplored(x, y, currentDepth)) {
+          const tile = this._map.getTile(x, y, currentDepth);
+          const foreGround = visibleCells[`${x},${y}`] ? tile.getForeground() : 'darkGray';
           display.draw(
             x - topLeftX,
             y - topLeftY,
             tile.getChar(),
-            tile.getForeground(),
+            foreGround,
             tile.getBackground()
           );
         }
