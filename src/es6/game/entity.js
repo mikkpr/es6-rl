@@ -1,4 +1,6 @@
+import Game from './index';
 import Glyph from './glyph';
+import { StairsUpTile, StairsDownTile } from './tile';
 
 export default class Entity extends Glyph {
   constructor(properties = {}) {
@@ -82,8 +84,57 @@ export default class Entity extends Glyph {
   }
 
   setPosition(x, y, z) {
+    const oldX = this._x;
+    const oldY = this._y;
+    const oldZ = this._z;
+
     this._x = x;
     this._y = y;
     this._z = z;
+
+
+    if (this._map) {
+      this._map.updateEntityPosition(this, oldX, oldY, oldZ);
+    }
+  }
+
+  tryMove(x, y, z, map) {
+    const tile = map.getTile(x, y, this.getZ());
+    const target = map.getEntityAt(x, y, this.getZ());
+
+    if (z < this.getZ()) {
+      if (tile !== StairsUpTile) {
+        Game.sendMessage(this, "You can't go up here!");
+      } else {
+        Game.sendMessage(this, 'You ascend to level %d', [z + 1]);
+        this.setPosition(x, y, z);
+      }
+    } else if (z > this.getZ()) {
+      if (tile !== StairsDownTile) {
+        Game.sendMessage(this, "You can't go down here!");
+      } else {
+        Game.sendMessage(this, 'You descend to level %d', [z + 1]);
+        this.setPosition(x, y, z);
+      }
+    } else if (target) {
+      if (
+        this.hasMixin('Attacker') &&
+        (this.hasMixin('PlayerActor') || target.hasMixin('PlayerActor'))
+      ) {
+        this.attack(target);
+        return true;
+      }
+      return false;
+    } else if (tile.isWalkable()) {
+      this.setPosition(x, y, z);
+      return true;
+    } else if (tile.isDiggable()) {
+      if (this.hasMixin('Digger')) {
+        this.dig(x, y, z, map);
+        return true;
+      }
+      return false;
+    }
+    return false;
   }
 }

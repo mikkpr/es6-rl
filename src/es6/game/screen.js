@@ -25,14 +25,16 @@ const StartScreen = {
 const PlayScreen = {
   _map: null,
   _player: null,
+  _gameEnded: false,
 
   enter() {
     const width = 100;
-    const height = 48;
-    const depth = 2;
+    const height = 100;
+    const depth = 5;
 
     const tiles = new Builder(width, height, depth).getTiles();
     this._player = new Entity(PlayerTemplate);
+
     this._map = new Map(tiles, this._player);
     this._map.getEngine().start();
   },
@@ -49,20 +51,8 @@ const PlayScreen = {
     const screenWidth = Game.getScreenWidth();
     const screenHeight = Game.getScreenHeight();
 
-    const topLeftX = Math.min(
-      Math.max(
-        0,
-        this._player.getX() - (screenWidth / 2)
-      ),
-      this._map.getWidth() - screenWidth
-    );
-    const topLeftY = Math.min(
-      Math.max(
-        0,
-        this._player.getY() - (screenHeight / 2)
-      ),
-      this._map.getHeight() - screenHeight
-    );
+    const topLeftX = Math.min(Math.max(0, this._player.getX() - (screenWidth / 2)), this._map.getWidth() - screenWidth);
+    const topLeftY = Math.min(Math.max(0, this._player.getY() - (screenHeight / 2)), this._map.getHeight() - screenHeight);
 
     // calculate FOV and set explored tiles
     const visibleCells = {};
@@ -97,11 +87,12 @@ const PlayScreen = {
 
     // draw entities
     const entities = this._map.getEntities();
-    entities.forEach(entity => {
+    Object.keys(entities).forEach(key => {
+      const entity = entities[key];
       if (
         entity.getX() >= topLeftX &&
-        entity.getY() >= topLeftY &&
         entity.getX() < topLeftX + screenWidth &&
+        entity.getY() >= topLeftY &&
         entity.getY() < topLeftY + screenHeight &&
         entity.getZ() === this._player.getZ()
       ) {
@@ -129,32 +120,36 @@ const PlayScreen = {
     });
 
     // draw player stats
-    let stats = vsprintf('HP: %d/%d ', [this._player.getHP(), this._player.getMaxHP()]);
+    let stats = vsprintf('HP: %d/%d EXP: %d', [
+      this._player.getHP(),
+      this._player.getMaxHP(),
+      this._player.getExperience(),
+    ]);
     stats = `%c{white}%b{black}${stats}`;
     display.drawText(0, screenHeight, stats);
   },
 
   handleInput(type, event) {
-    if (type === 'keydown') {
-      if (event.keyCode === ROT.VK_RETURN) {
-        Game.switchScreen(WinScreen);
-      } else if (event.keyCode === ROT.VK_ESCAPE) {
+    if (this._gameEnded) {
+      if (type === 'keydown' && event.keyCode === ROT.VK_RETURN) {
         Game.switchScreen(LoseScreen);
-      } else {
-        // movement
-        if (event.keyCode === ROT.VK_LEFT) {
-          this.move(-1, 0, 0);
-        } else if (event.keyCode === ROT.VK_RIGHT) {
-          this.move(1, 0, 0);
-        } else if (event.keyCode === ROT.VK_UP) {
-          this.move(0, -1, 0);
-        } else if (event.keyCode === ROT.VK_DOWN) {
-          this.move(0, 1, 0);
-        } else {
-          return;
-        }
-        this._map.getEngine().unlock();
       }
+      return;
+    }
+    if (type === 'keydown') {
+      // movement
+      if (event.keyCode === ROT.VK_LEFT) {
+        this.move(-1, 0, 0);
+      } else if (event.keyCode === ROT.VK_RIGHT) {
+        this.move(1, 0, 0);
+      } else if (event.keyCode === ROT.VK_UP) {
+        this.move(0, -1, 0);
+      } else if (event.keyCode === ROT.VK_DOWN) {
+        this.move(0, 1, 0);
+      } else {
+        return;
+      }
+      this._map.getEngine().unlock();
     } else if (type === 'keypress') {
       const keyChar = String.fromCharCode(event.charCode);
       if (keyChar === '>') {
@@ -166,6 +161,10 @@ const PlayScreen = {
       }
       this._map.getEngine().unlock();
     }
+  },
+
+  setGameEnded(ended) {
+    this._gameEnded = ended;
   },
 
   exit() { },

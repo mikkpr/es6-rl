@@ -1,5 +1,5 @@
 import ROT from 'rot-js';
-import { FungusTemplate } from './templates';
+import { FungusTemplate, BatTemplate, NewtTemplate } from './templates';
 import Entity from './entity';
 import { NullTile, FloorTile } from './tile';
 
@@ -11,23 +11,27 @@ export default class Map {
     this._width = tiles[0].length;
     this._height = tiles[0][0].length;
 
+    // fov
+    this._fov = [];
+    this.setupFOV();
+
     // entities
-    this._entities = [];
+    this._entities = {};
 
     this._scheduler = new ROT.Scheduler.Simple();
     this._engine = new ROT.Engine(this._scheduler);
 
     this.addEntityAtRandomPosition(player, 0);
 
+
+    const templates = [FungusTemplate, BatTemplate, NewtTemplate];
     for (let z = 0; z < this._depth; z++) {
-      for (let i = 0; i < 25; i++) {
-        this.addEntityAtRandomPosition(new Entity(FungusTemplate), z);
+      // increase number of monsters on every level
+      for (let i = 0; i < (25 + 4 * z); i++) {
+        const template = templates[Math.floor(Math.random() * templates.length)];
+        this.addEntityAtRandomPosition(new Entity(template), z);
       }
     }
-
-    // fov
-    this._fov = [];
-    this.setupFOV();
 
     // exploration data
     this._explored = new Array(this._depth);
@@ -86,46 +90,34 @@ export default class Map {
   }
 
   getEntityAt(x, y, z) {
-    for (let i = 0; i < this._entities.length; i++) {
-      const entity = this._entities[i];
-      if (entity.getX() === x && entity.getY() === y && entity.getZ() === z) {
-        return entity;
-      }
-    }
-    return null;
+    return this._entities[`${x},${y},${z}`];
   }
 
   getEntitiesWithinRadius(centerX, centerY, centerZ, radius) {
-    const results = [];
     const leftX = centerX - radius;
     const rightX = centerX + radius;
     const topY = centerY - radius;
     const bottomY = centerY + radius;
 
-    for (let i = 0; i < this._entities.length; i++) {
-      const entity = this._entities[i];
-      if (entity.getX() >= leftX &&
+    return Object.keys(this._entities).reduce((entities, key) => {
+      const entity = this._entities[key];
+      if (
+        entity.getX() >= leftX &&
         entity.getX() <= rightX &&
         entity.getY() >= topY &&
         entity.getY() <= bottomY &&
-        entity.getZ() === centerZ) {
-          results.push(entity);
-        }
-    }
-    return results;
+        entity.getZ() == centerZ
+      ) {
+        return entities.concat([entity]);
+      } else {
+        return entities;
+      }
+    }, []);
   }
 
   addEntity(entity) {
-    if (
-      entity.getX() < 0 || entity.getX() >= this._width ||
-      entity.getY() < 0 || entity.getY() >= this._height ||
-      entity.getZ() < 0 || entity.getZ() >= this._depth
-    ) {
-      throw new Error('Adding entity out of bounds.');
-    }
-
     entity.setMap(this);
-    this._entities.push(entity);
+    this.updateEntityPosition(entity);
 
     if (entity.hasMixin('Actor')) {
       this._scheduler.add(entity, true);
@@ -140,12 +132,37 @@ export default class Map {
     this.addEntity(entity);
   }
 
-  removeEntity(entity) {
-    for (let i = 0; i < this._entities.length; i++) {
-      if (this._entities[i] === entity) {
-        this._entities.splice(i, 1);
-        break;
+  updateEntityPosition(entity, oldX, oldY, oldZ) {
+    // delete old entry
+    if (oldX) {
+      const oldKey = `${oldX},${oldY},${oldZ}`;
+      if (this._entities[oldKey] == entity) {
+        delete this._entities[oldKey];
       }
+    }
+
+    // make sure entity is within game bounds
+    if (
+      entity.getX() < 0 || entity.getX() >= this._width ||
+      entity.getY() < 0 || entity.getY() >= this._height ||
+      entity.getZ() < 0 || entity.getZ() >= this._depth
+    ) {
+      throw new Error("Entity's position is out of bounds");
+    }
+
+    // check if new position is free
+    const key = `${entity.getX()},${entity.getY()},${entity.getZ()}`;
+    if (this._entities[key]) {
+      throw new Error('Tried to add entity at an occupied position');
+    }
+
+    this._entities[key] = entity;
+  }
+
+  removeEntity(entity) {
+    const key = `${entity.getX()},${entity.getY()},${entity.getZ()}`;
+    if (this._entities[key] == entity) {
+      delete this._entities[key];
     }
     if (entity.hasMixin('Actor')) {
       this._scheduler.remove(entity);
@@ -164,7 +181,7 @@ export default class Map {
         map._fov.push(
           new ROT.FOV.PreciseShadowcasting(
             (x, y) => !map.getTile(x, y, depth).isBlockingLight(),
-            { topology: 4 }
+            { topology: 8 }
           )
         );
       })();

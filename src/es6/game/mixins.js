@@ -1,52 +1,18 @@
 import Entity from './entity';
 import { FungusTemplate } from './templates';
-import { StairsUpTile, StairsDownTile } from './tile';
 
 import Game from './index';
-
-export const Moveable = {
-  name: 'Moveable',
-  tryMove(x, y, z, map) {
-    const tile = map.getTile(x, y, this.getZ());
-    const target = map.getEntityAt(x, y, this.getZ());
-
-    if (z < this.getZ()) {
-      if (tile !== StairsUpTile) {
-        Game.sendMessage(this, "You can't go up here!");
-      } else {
-        this.setPosition(x, y, z);
-        Game.sendMessage(this, 'You ascend to level %d', [z + 1]);
-      }
-    } else if (z > this.getZ()) {
-      if (tile !== StairsDownTile) {
-        Game.sendMessage(this, "You can't go down here!");
-      } else {
-        this.setPosition(x, y, z);
-        Game.sendMessage(this, 'You descend to level %d', [z + 1]);
-      }
-    } else if (target) {
-      if (this.hasMixin('Attacker')) {
-        this.attack(target);
-        return true;
-      }
-    } else if (tile.isWalkable()) {
-      this.setPosition(x, y, z);
-      return true;
-    } else if (tile.isDiggable()) {
-      if (this.hasMixin('Digger')) {
-        this.dig(x, y, z, map);
-        return true;
-      }
-    }
-    return false;
-  },
-};
 
 export const PlayerActor = {
   name: 'PlayerActor',
   groupName: 'Actor',
 
   act() {
+    // detect if game is over
+    if (this.getHP() <= 0) {
+      Game.Screen.PlayScreen.setGameEnded(true);
+      Game.sendMessage(this, 'You have died! Press [ENTER] to continue.');
+    }
     Game.refresh();
     this.getMap().getEngine().lock();
     this.clearMessages();
@@ -86,6 +52,8 @@ export const Destructible = {
     this._maxHP = template.maxHP || 10;
     this._HP = template.HP || this._maxHP;
 
+    this._experienceValue = template.experienceValue || 0;
+
     this._defenseValue = template.defenseValue || 0;
   },
   getHP() {
@@ -102,9 +70,15 @@ export const Destructible = {
 
     if (this._HP <= 0) {
       Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-      Game.sendMessage(this, 'You die!');
 
-      this.getMap().removeEntity(this);
+      if (this.hasMixin(PlayerActor)) {
+        this.act();
+      } else {
+        if (attacker.hasMixin('Experience')) {
+          attacker.addExperience(this._experienceValue);
+        }
+        this.getMap().removeEntity(this);
+      }
     }
   },
 };
@@ -143,7 +117,7 @@ export const Attacker = {
 
 export const MessageRecipient = {
   name: 'MessageRecipient',
-  init(template) {
+  init() {
     this._messages = [];
   },
   receiveMessage(message) {
@@ -165,5 +139,35 @@ export const Sight = {
   },
   getSightRadius() {
     return this._sightRadius;
+  },
+};
+
+export const WanderActor = {
+  name: 'WanderActor',
+  groupName: 'Actor',
+  act() {
+    const moveOffset = (Math.round(Math.random()) === 1) ? 1 : -1;
+    if (Math.round(Math.random()) === 1) {
+      this.tryMove(this.getX() + moveOffset, this.getY(), this.getZ(), this.getMap());
+    } else {
+      this.tryMove(this.getX(), this.getY() + moveOffset, this.getZ(), this.getMap());
+    }
+  },
+};
+
+export const Experience = {
+  name: 'Experience',
+  groupName: 'Experience',
+  init() {
+    this._experience = 0;
+  },
+  getExperience() {
+    return this._experience;
+  },
+  setExperience(exp) {
+    this._experience = exp;
+  },
+  addExperience(exp) {
+    this._experience += exp;
   },
 };
