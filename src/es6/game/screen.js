@@ -1,7 +1,6 @@
 import ROT from 'rot-js';
 import Map from './map';
-import Entity from './entity';
-import { PlayerTemplate } from './templates';
+import { Player } from './entities';
 import Game from './index';
 import { vsprintf } from 'sprintf-js';
 import Builder from './builder';
@@ -33,7 +32,7 @@ const PlayScreen = {
     const depth = 5;
 
     const tiles = new Builder(width, height, depth).getTiles();
-    this._player = new Entity(PlayerTemplate);
+    this._player = new Player();
 
     this._map = new Map(tiles, this._player);
     this._map.getEngine().start();
@@ -68,45 +67,43 @@ const PlayScreen = {
       }
     );
 
-    // draw map tiles
+    // render map tiles and their contents
     for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
       for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
         if (map.getExplored(x, y, currentDepth)) {
-          const tile = this._map.getTile(x, y, currentDepth);
-          const foreGround = visibleCells[`${x},${y}`] ? tile.getForeground() : 'darkGray';
+          // first, try rendering the tile itself
+          let glyph = this._map.getTile(x, y, currentDepth);
+          let foreGround = glyph.getForeground();
+
+          if (visibleCells[`${x},${y}`]) {
+            // if tile is visible, try to render its contents instead, starting from items
+            const items = map.getItemsAt(x, y, currentDepth);
+            if (items) {
+              glyph = items[items.length - 1];
+            }
+
+            // entities are always rendered on top of items
+            if (map.getEntityAt(x, y, currentDepth)) {
+              glyph = map.getEntityAt(x, y, currentDepth);
+            }
+
+            // update foreground
+            foreGround = glyph.getForeground();
+          } else {
+            // render visited and invisible tiles in a darker color
+            foreGround = '#333';
+          }
+
           display.draw(
             x - topLeftX,
             y - topLeftY,
-            tile.getChar(),
+            glyph.getChar(),
             foreGround,
-            tile.getBackground()
+            glyph.getBackground()
           );
         }
       }
     }
-
-    // draw entities
-    const entities = this._map.getEntities();
-    Object.keys(entities).forEach(key => {
-      const entity = entities[key];
-      if (
-        entity.getX() >= topLeftX &&
-        entity.getX() < topLeftX + screenWidth &&
-        entity.getY() >= topLeftY &&
-        entity.getY() < topLeftY + screenHeight &&
-        entity.getZ() === this._player.getZ()
-      ) {
-        if (visibleCells[`${entity.getX()},${entity.getY()}`]) {
-          display.draw(
-            entity.getX() - topLeftX,
-            entity.getY() - topLeftY,
-            entity.getChar(),
-            entity.getForeground(),
-            entity.getBackground()
-          );
-        }
-      }
-    });
 
     // draw messages
     const messages = this._player.getMessages();

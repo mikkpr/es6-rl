@@ -1,5 +1,5 @@
 import Entity from './entity';
-import { FungusTemplate } from './templates';
+import EntityRepository from './entities';
 
 import Game from './index';
 
@@ -33,7 +33,7 @@ export const FungusActor = {
 
         if (xOffset !== 0 || yOffset !== 0) {
           if (this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset, this.getZ())) {
-            const entity = new Entity(FungusTemplate);
+            const entity = EntityRepository.create('fungus');
             entity.setPosition(this.getX() + xOffset, this.getY() + yOffset, this.getZ());
             this.getMap().addEntity(entity);
             this._growthsRemaining--;

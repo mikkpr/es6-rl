@@ -10,6 +10,9 @@ import {
   Experience,
 } from './mixins';
 
+import Entity from './entity';
+import Repository from './repository';
+
 export const PlayerTemplate = {
   char: '@',
   fg: 'white',
@@ -27,7 +30,15 @@ export const PlayerTemplate = {
   ],
 };
 
-export const FungusTemplate = {
+export class Player extends Entity {
+  constructor() {
+    super(PlayerTemplate);
+  }
+}
+
+const EntityRepository = new Repository('entities', Entity);
+
+EntityRepository.define('fungus', {
   name: 'fungus',
   char: 'F',
   fg: 'green',
@@ -37,10 +48,10 @@ export const FungusTemplate = {
     FungusActor,
     Destructible,
   ],
-};
+});
 
-export const BatTemplate = {
-  name: 'Bat',
+EntityRepository.define('bat', {
+  name: 'bat',
   char: 'B',
   fg: 'white',
   maxHP: 5,
@@ -51,9 +62,9 @@ export const BatTemplate = {
     Attacker,
     Destructible,
   ],
-};
+});
 
-export const NewtTemplate = {
+EntityRepository.define('newt', {
   name: 'Newt',
   char: ':',
   fg: 'yellow',
@@ -65,4 +76,6 @@ export const NewtTemplate = {
     Attacker,
     Destructible,
   ],
-};
+});
+
+export default EntityRepository;

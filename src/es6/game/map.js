@@ -1,6 +1,6 @@
 import ROT from 'rot-js';
-import { FungusTemplate, BatTemplate, NewtTemplate } from './templates';
-import Entity from './entity';
+import EntityRepository from './entities';
+import ItemRepository from './items';
 import { NullTile, FloorTile } from './tile';
 
 export default class Map {
@@ -18,18 +18,23 @@ export default class Map {
     // entities
     this._entities = {};
 
+    // items
+    this._items = {};
+
     this._scheduler = new ROT.Scheduler.Simple();
     this._engine = new ROT.Engine(this._scheduler);
 
     this.addEntityAtRandomPosition(player, 0);
 
-
-    const templates = [FungusTemplate, BatTemplate, NewtTemplate];
     for (let z = 0; z < this._depth; z++) {
-      // increase number of monsters on every level
+      // create monsters
       for (let i = 0; i < (25 + 4 * z); i++) {
-        const template = templates[Math.floor(Math.random() * templates.length)];
-        this.addEntityAtRandomPosition(new Entity(template), z);
+        this.addEntityAtRandomPosition(EntityRepository.createRandom(), z);
+      }
+
+      // create items
+      for (let i = 0; i < (10 + 3 * z); i++) {
+        this.addItemAtRandomPosition(ItemRepository.createRandom(), z);
       }
     }
 
@@ -181,7 +186,7 @@ export default class Map {
         map._fov.push(
           new ROT.FOV.PreciseShadowcasting(
             (x, y) => !map.getTile(x, y, depth).isBlockingLight(),
-            { topology: 8 }
+            { topology: 4 }
           )
         );
       })();
@@ -212,5 +217,34 @@ export default class Map {
     } else {
       return false;
     }
+  }
+
+  getItemsAt(x, y, z) {
+    return this._items[`${x},${y},${z}`];
+  }
+
+  setItemsAt(x, y, z, items) {
+    const key = `${x},${y},${z}`;
+    if (items.length === 0) {
+      if (this._items[key]) {
+        delete this._items[key];
+      }
+    } else {
+      this._items[key] = items;
+    }
+  }
+
+  addItem(x, y, z, item) {
+    const key = `${x},${y},${z}`;
+    if (this._items[key]) {
+      this._items[key].push(item);
+    } else {
+      this._items[key] = [item];
+    }
+  }
+
+  addItemAtRandomPosition(item, z) {
+    const position = this.getRandomFloorPosition(z);
+    this.addItem(position.x, position.y, position.z, item);
   }
 }
