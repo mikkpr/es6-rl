@@ -61,9 +61,9 @@ export default class Builder {
 
     generator.create((x, y, v) => {
       if (v === 1) {
-        map[x][y] = WallTile;
-      } else {
         map[x][y] = FloorTile;
+      } else {
+        map[x][y] = WallTile;
       }
     });
     return map;

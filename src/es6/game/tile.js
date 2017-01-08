@@ -4,36 +4,49 @@ export default class Tile extends Glyph {
   constructor(properties = {}) {
     super(properties);
 
-    this._isWalkable = properties.isWalkable || false;
-    this._isDiggable = properties.isDiggable || false;
+    this._walkable = properties.walkable || false;
+    this._diggable = properties.diggable || false;
+    this._blocksLight = (typeof properties.blocksLight !== 'undefined') ? properties.blocksLight : false;
   }
 
   isWalkable() {
-    return this._isWalkable;
+    return this._walkable;
   }
 
   isDiggable() {
-    return this._isDiggable;
+    return this._diggable;
+  }
+
+  isBlockingLight() {
+    return this._blocksLight;
   }
 }
 
 export const NullTile = new Tile({});
+
 export const FloorTile = new Tile({
   char: '.',
-  isWalkable: true,
+  walkable: true,
+  blocksLight: false,
 });
+
 export const WallTile = new Tile({
   char: '#',
   fg: 'goldenrod',
-  isDiggable: true,
+  diggable: true,
+  blocksLight: true,
 });
+
 export const StairsUpTile = new Tile({
   char: '<',
   fg: 'white',
-  isWalkable: true,
+  walkable: true,
+  blocksLight: false,
 });
+
 export const StairsDownTile = new Tile({
   char: '>',
   fg: 'white',
-  isWalkable: true,
+  walkable: true,
+  blocksLight: false,
 });

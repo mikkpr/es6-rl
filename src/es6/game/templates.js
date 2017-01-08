@@ -6,6 +6,7 @@ import {
   Destructible,
   Digger,
   MessageRecipient,
+  Sight,
 } from './mixins';
 
 export const PlayerTemplate = {
@@ -13,6 +14,7 @@ export const PlayerTemplate = {
   fg: 'white',
   maxHP: 40,
   attackValue: 10,
+  sightRadius: 6,
   mixins: [
     Moveable,
     PlayerActor,
@@ -20,6 +22,7 @@ export const PlayerTemplate = {
     Digger,
     Destructible,
     MessageRecipient,
+    Sight,
   ],
 };
 

@@ -23,6 +23,10 @@ export default class Map {
         this.addEntityAtRandomPosition(new Entity(FungusTemplate), z);
       }
     }
+
+    // fov
+    this._fov = [];
+    this.setupFOV();
   }
 
   getWidth() {
@@ -46,6 +50,10 @@ export default class Map {
       ret = this._tiles[z][x][y] || ret;
     }
     return ret;
+  }
+
+  getFOV(depth) {
+    return this._fov[depth];
   }
 
   dig(x, y, z) {
@@ -141,5 +149,20 @@ export default class Map {
 
   isEmptyFloor(x, y, z) {
     return this.getTile(x, y, z) == FloorTile && !this.getEntityAt(x, y, z);
+  }
+
+  setupFOV() {
+    const map = this;
+    for (let z = 0; z < this._depth; z++) {
+      (() => {
+        const depth = z;
+        map._fov.push(
+          new ROT.FOV.PreciseShadowcasting(
+            (x, y) => !map.getTile(x, y, depth).isBlockingLight(),
+            { topology: 4 }
+          )
+        );
+      })();
+    }
   }
 }

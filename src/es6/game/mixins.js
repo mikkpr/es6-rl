@@ -156,3 +156,14 @@ export const MessageRecipient = {
     this._messages = [];
   },
 };
+
+export const Sight = {
+  name: 'Sight',
+  group: 'Sight',
+  init(template) {
+    this._sightRadius = template.sightRadius || 5;
+  },
+  getSightRadius() {
+    return this._sightRadius;
+  },
+};
