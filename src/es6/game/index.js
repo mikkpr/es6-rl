@@ -2,7 +2,7 @@ import ROT from 'rot-js';
 import { vsprintf } from 'sprintf-js';
 
 import Screen from './screen';
-import { MessageRecipient } from './mixins';
+import { MessageRecipient } from './entitymixins';
 
 const displayDefaults = {
   width: 40,

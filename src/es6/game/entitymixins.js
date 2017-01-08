@@ -1,5 +1,5 @@
-import Entity from './entity';
 import EntityRepository from './entities';
+import ItemRepository from './items';
 
 import Game from './index';
 
@@ -8,14 +8,22 @@ export const PlayerActor = {
   groupName: 'Actor',
 
   act() {
+    if (this._acting) {
+      return;
+    }
+    this._acting = true;
+    this.addTurnHunger();
+
     // detect if game is over
-    if (this.getHP() <= 0) {
+    if (!this._alive) {
       Game.Screen.PlayScreen.setGameEnded(true);
-      Game.sendMessage(this, 'You have died! Press [ENTER] to continue.');
+      Game.sendMessage(this, 'Press [ENTER] to continue.');
     }
     Game.refresh();
     this.getMap().getEngine().lock();
     this.clearMessages();
+
+    this._acting = false;
   },
 };
 
@@ -70,15 +78,13 @@ export const Destructible = {
 
     if (this._HP <= 0) {
       Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-
-      if (this.hasMixin(PlayerActor)) {
-        this.act();
-      } else {
-        if (attacker.hasMixin('Experience')) {
-          attacker.addExperience(this._experienceValue);
-        }
-        this.getMap().removeEntity(this);
+      if (this.hasMixin('CorpseDropper')) {
+        this.tryDropCorpse();
       }
+      if (attacker.hasMixin('Experience')) {
+        attacker.addExperience(this._experienceValue);
+      }
+      this.kill();
     }
   },
 };
@@ -225,6 +231,61 @@ export const Inventory = {
         this._map.addItem(this.getX(), this.getY(), this.getZ(), this._items[i]);
       }
       this.removeItem(i);
+    }
+  },
+};
+
+export const Hunger = {
+  name: 'Hunger',
+  init(template) {
+    this._maxFullness = template.maxFullness || 1000;
+    this._fullness = template.fullness || (this._maxFullness / 2);
+    this._fullnessDepletionRate = template.fullnessDepletionRate || 1;
+  },
+  addTurnHunger() {
+    this.modifyFullnessBy(-this._fullnessDepletionRate);
+  },
+  modifyFullnessBy(pts) {
+    console.log('modifying hunger from', this._fullness, 'by', pts);
+    this._fullness += pts;
+    if (this._fullness <= 0) {
+      this.kill('You have died of starvation!');
+    } else if (this._fullness > this._maxFullness) {
+      this.kill('You choke and die!');
+    }
+  },
+  getHungerState() {
+    const perPercent = this._maxFullness / 100;
+    if (this._fullness <= perPercent * 5) {
+      return 'Starving';
+    } else if (this._fullness <= perPercent * 25) {
+      return 'Hungry';
+    } else if (this._fullness >= perPercent * 95) {
+      return 'Oversatiated';
+    } else if (this._fullness >= perPercent * 75) {
+      return 'Full';
+    } else {
+      return 'Not Hungry';
+    }
+  },
+};
+
+export const CorpseDropper = {
+  name: 'CorpseDropper',
+  init(template) {
+    this._corpseDropRate = template.corpseDropRate  || 100;
+  },
+  tryDropCorpse() {
+    if (Math.round(Math.random() * 100) < this._corpseDropRate) {
+      this._map.addItem(
+        this.getX(),
+        this.getY(),
+        this.getZ(),
+        ItemRepository.create('corpse', {
+          name: `${this._name} corpse`,
+          fg: this._fg,
+        })
+      );
     }
   },
 };

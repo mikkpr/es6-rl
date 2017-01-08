@@ -25,13 +25,24 @@ class ItemListScreen {
   constructor(template) {
     this._caption = template.caption;
     this._okFunction = template.ok;
+    this._isAcceptableFunction = template.isAcceptable || (x => x);
     this._canSelectItem = template.canSelect;
-    this._canSelectMultipleItems = template.canSelectMultiple;
+    this._canSelectMultipleItems = template.canSelectMultipleItems;
   }
   setup(player, items) {
     this._player = player;
-    this._items = items;
+    let count = 0;
+    const isAcceptableFn = this._isAcceptableFunction;
+    this._items = items.map(item => {
+      if (isAcceptableFn(item)) {
+        count++;
+        return item;
+      } else {
+        return null;
+      }
+    });
     this._selectedIndices = {};
+    return count;
   }
   render(display) {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
@@ -123,6 +134,23 @@ const DropScreen = new ItemListScreen({
       this._player.dropItem(Object.keys(selectedItems)[0]);
       return true;
     },
+});
+
+const EatScreen = new ItemListScreen({
+  caption: 'Choose the item you wish to eat',
+  canSelect: true,
+  canSelectMultipleItems: false,
+  isAcceptable: item => item && item.hasMixin('Edible'),
+  ok(selectedItems) {
+    const key = Object.keys(selectedItems)[0];
+    const item = selectedItems[key];
+    Game.sendMessage(this._player, 'You eat %s.', [item.describeThe()]);
+    item.eat(this._player);
+    if (!item.hasRemainingConsumptions()) {
+      this._player.removeItem(key);
+    }
+    return true;
+  },
 });
 
 const PlayScreen = {
@@ -234,6 +262,10 @@ const PlayScreen = {
     ]);
     stats = `%c{white}%b{black}${stats}`;
     display.drawText(0, screenHeight, stats);
+
+    // draw hunger state
+    const hungerState = this._player.getHungerState();
+    display.drawText(screenWidth - hungerState.length, screenHeight, hungerState);
   },
 
   handleInput(type, event) {
@@ -258,25 +290,36 @@ const PlayScreen = {
       } else if (event.keyCode === ROT.VK_DOWN) {
         this.move(0, 1, 0);
       } else if (event.keyCode === ROT.VK_I) {
-        if (this._player.getItems().filter(x => x).length === 0) {
+        if (InventoryScreen.setup(this._player, this._player.getItems())) {
+          // Show the inventory
+          this.setSubScreen(InventoryScreen);
+        } else {
           // If the player has no items, send a message and don't take a turn
           Game.sendMessage(this._player, 'You are not carrying anything!');
           Game.refresh();
-        } else {
-          // Show the inventory
-          InventoryScreen.setup(this._player, this._player.getItems());
-          this.setSubScreen(InventoryScreen);
+          this._player.clearMessages();
         }
         return;
       } else if (event.keyCode === ROT.VK_D) {
-        if (this._player.getItems().filter(x => x).length === 0) {
+        if (DropScreen.setup(this._player, this._player.getItems())) {
+          // Show the drop screen
+          this.setSubScreen(DropScreen);
+        } else {
           // If the player has no items, send a message and don't take a turn
           Game.sendMessage(this._player, 'You have nothing to drop!');
           Game.refresh();
+          this._player.clearMessages();
+        }
+        return;
+      } else if (event.keyCode === ROT.VK_E) {
+        if (EatScreen.setup(this._player, this._player.getItems())) {
+          // Show the eat screen
+          this.setSubScreen(EatScreen);
         } else {
-          // Show the drop screen
-          DropScreen.setup(this._player, this._player.getItems());
-          this.setSubScreen(DropScreen);
+          // If the player has no items, send a message and don't take a turn
+          Game.sendMessage(this._player, 'You have nothing to eat!');
+          Game.refresh();
+          this._player.clearMessages();
         }
         return;
       } else if (event.keyCode === ROT.VK_COMMA) {

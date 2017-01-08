@@ -9,6 +9,29 @@ export default class Entity extends DynamicGlyph {
     this._y = properties.y || 0;
     this._z = properties.z || 0;
     this._map = null;
+    this._alive = true;
+  }
+
+  isAlive() {
+    return this._alive;
+  }
+
+  kill(message) {
+    if (!this._alive) {
+      return;
+    }
+    this._alive = false;
+    if (message) {
+      Game.sendMessage(this, message);
+    } else {
+      Game.sendMessage(this, 'You have died!');
+    }
+
+    if (this.hasMixin('PlayerActor')) {
+      this.act();
+    } else {
+      this.getMap().removeEntity(this);
+    }
   }
 
   setX(x) {

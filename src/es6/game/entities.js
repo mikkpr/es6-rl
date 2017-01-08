@@ -9,7 +9,9 @@ import {
   WanderActor,
   Experience,
   Inventory,
-} from './mixins';
+  Hunger,
+  CorpseDropper,
+} from './entitymixins';
 
 import Entity from './entity';
 import Repository from './repository';
@@ -30,6 +32,7 @@ export const PlayerTemplate = {
     Sight,
     Experience,
     Inventory,
+    Hunger,
   ],
 };
 
@@ -64,6 +67,7 @@ EntityRepository.define('bat', {
     WanderActor,
     Attacker,
     Destructible,
+    CorpseDropper,
   ],
 });
 
@@ -78,6 +82,7 @@ EntityRepository.define('newt', {
     WanderActor,
     Attacker,
     Destructible,
+    CorpseDropper,
   ],
 });
 
