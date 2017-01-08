@@ -8,6 +8,7 @@ import {
   Sight,
   WanderActor,
   Experience,
+  Inventory,
 } from './mixins';
 
 import Entity from './entity';
@@ -19,6 +20,7 @@ export const PlayerTemplate = {
   maxHP: 40,
   attackValue: 10,
   sightRadius: 6,
+  inventorySlots: 22,
   mixins: [
     PlayerActor,
     Attacker,
@@ -27,6 +29,7 @@ export const PlayerTemplate = {
     MessageRecipient,
     Sight,
     Experience,
+    Inventory,
   ],
 };
 
@@ -65,7 +68,7 @@ EntityRepository.define('bat', {
 });
 
 EntityRepository.define('newt', {
-  name: 'Newt',
+  name: 'newt',
   char: ':',
   fg: 'yellow',
   maxHP: 3,

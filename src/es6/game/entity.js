@@ -127,6 +127,14 @@ export default class Entity extends Glyph {
       return false;
     } else if (tile.isWalkable()) {
       this.setPosition(x, y, z);
+      const items = this.getMap().getItemsAt(x, y, z);
+      if (items) {
+        if (items.length === 1) {
+          Game.sendMessage(this, 'You see %s.', [items[0].describeA()]);
+        } else {
+          Game.sendMessage(this, 'There are several objects here.');
+        }
+      }
       return true;
     } else if (tile.isDiggable()) {
       if (this.hasMixin('Digger')) {

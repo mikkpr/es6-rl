@@ -171,3 +171,60 @@ export const Experience = {
     this._experience += exp;
   },
 };
+
+export const Inventory = {
+  name: 'Inventory',
+  groupName: 'Inventory',
+  init(template) {
+    const inventorySlots = template.inventorySlots || 10;
+    this._items = new Array(inventorySlots);
+  },
+  getItems() {
+    return this._items;
+  },
+  getItem(i) {
+    return this._items[i];
+  },
+  addItem(item) {
+    for (let i = 0; i < this._items.length; i++) {
+      if (!this._items[i]) {
+        this._items[i] = item;
+        return true;
+      }
+    }
+    return false;
+  },
+  removeItem(i) {
+    this._items[i] = null;
+  },
+  canAddItem() {
+    for (let i = 0; i < this._items.length; i++) {
+      if (!this._items[i]) {
+        return true;
+      }
+    }
+    return false;
+  },
+  pickupItems(indices) {
+    const mapItems = this._map.getItemsAt(this.getX(), this.getY(), this.getZ());
+    let added = 0;
+    for (let i = 0; i < indices.length; i++) {
+      if (this.addItem(mapItems[indices[i] - added])) {
+        mapItems.splice(indices[i] - added, 1);
+        added++;
+      } else {
+        break;
+      }
+    }
+    this._map.setItemsAt(this.getX(), this.getY(), this.getZ(), mapItems);
+    return added === indices.length;
+  },
+  dropItem(i) {
+    if (this._items[i]) {
+      if (this._map) {
+        this._map.addItem(this.getX(), this.getY(), this.getZ(), this._items[i]);
+      }
+      this.removeItem(i);
+    }
+  },
+};
