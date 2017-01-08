@@ -1,4 +1,4 @@
-import Item from './entity';
+import Item from './item';
 import Repository from './repository';
 
 export const ItemRepository = new Repository('items', Item);
