@@ -139,7 +139,7 @@ export default class Map {
 
   updateEntityPosition(entity, oldX, oldY, oldZ) {
     // delete old entry
-    if (oldX) {
+    if (typeof oldX === 'number') {
       const oldKey = `${oldX},${oldY},${oldZ}`;
       if (this._entities[oldKey] == entity) {
         delete this._entities[oldKey];
