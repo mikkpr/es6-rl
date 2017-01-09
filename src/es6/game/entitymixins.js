@@ -71,7 +71,18 @@ export const Destructible = {
     return this._maxHP;
   },
   getDefenseValue() {
-    return this._defenseValue;
+    let modifier = 0;
+    // If we can equip items, then have to take into
+    // consideration weapon and armor
+    if (this.hasMixin('Equipper')) {
+      if (this.getWeapon()) {
+        modifier += this.getWeapon().getDefenseValue();
+      }
+      if (this.getArmor()) {
+        modifier += this.getArmor().getDefenseValue();
+      }
+    }
+    return this._defenseValue + modifier;
   },
   takeDamage(attacker, damage) {
     this._HP -= damage;
@@ -104,7 +115,18 @@ export const Attacker = {
     this._attackValue = template.attackValue || 1;
   },
   getAttackValue() {
-    return this._attackValue;
+    let modifier = 0;
+    // If we can equip items, then have to take into
+    // consideration weapon and armor
+    if (this.hasMixin('Equipper')) {
+      if (this.getWeapon()) {
+        modifier += this.getWeapon().getAttackValue();
+      }
+      if (this.getArmor()) {
+        modifier += this.getArmor().getAttackValue();
+      }
+    }
+    return this._attackValue + modifier;
   },
   attack(target) {
     if (target.hasMixin('Destructible')) {
@@ -201,6 +223,9 @@ export const Inventory = {
     return false;
   },
   removeItem(i) {
+    if (this._items[i] && this.hasMixin('Equipper')) {
+      this.unequip(this._items[i]);
+    }
     this._items[i] = null;
   },
   canAddItem() {
@@ -246,7 +271,6 @@ export const Hunger = {
     this.modifyFullnessBy(-this._fullnessDepletionRate);
   },
   modifyFullnessBy(pts) {
-    console.log('modifying hunger from', this._fullness, 'by', pts);
     this._fullness += pts;
     if (this._fullness <= 0) {
       this.kill('You have died of starvation!');
@@ -286,6 +310,41 @@ export const CorpseDropper = {
           fg: this._fg,
         })
       );
+    }
+  },
+};
+
+export const Equipper = {
+  name: 'Equipper',
+  init() {
+    this._weapon = null;
+    this._armor = null;
+  },
+  wield(item) {
+    this._weapon = item;
+  },
+  unwield() {
+    this._weapon = null;
+  },
+  wear(item) {
+    this._armor = item;
+  },
+  takeOff() {
+    this._armor = null;
+  },
+  getWeapon() {
+    return this._weapon;
+  },
+  getArmor() {
+    return this._armor;
+  },
+  unequip(item) {
+    // Helper function to be called before getting rid of an item.
+    if (this._weapon === item) {
+      this.unwield();
+    }
+    if (this._armor === item) {
+      this.takeOff();
     }
   },
 };

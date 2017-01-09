@@ -11,6 +11,7 @@ import {
   Inventory,
   Hunger,
   CorpseDropper,
+  Equipper,
 } from './entitymixins';
 
 import Entity from './entity';
@@ -33,6 +34,7 @@ export const PlayerTemplate = {
     Experience,
     Inventory,
     Hunger,
+    Equipper,
   ],
 };
 

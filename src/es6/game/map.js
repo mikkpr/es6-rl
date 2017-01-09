@@ -38,6 +38,17 @@ export default class Map {
       }
     }
 
+    // Add weapons and armor to the map in random positions
+    const templates = [
+      'dagger', 'sword', 'staff', 'tunic', 'chainmail', 'platemail',
+    ];
+    for (let i = 0; i < templates.length; i++) {
+      this.addItemAtRandomPosition(
+        ItemRepository.create(templates[i]),
+        Math.floor(this._depth * Math.random())
+      );
+    }
+
     // exploration data
     this._explored = new Array(this._depth);
     this.setupExploredArray();

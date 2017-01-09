@@ -28,6 +28,7 @@ class ItemListScreen {
     this._isAcceptableFunction = template.isAcceptable || (x => x);
     this._canSelectItem = template.canSelect;
     this._canSelectMultipleItems = template.canSelectMultipleItems;
+    this._hasNoItemOption = template.hasNoItemOption;
   }
   setup(player, items) {
     this._player = player;
@@ -47,6 +48,9 @@ class ItemListScreen {
   render(display) {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     display.drawText(0, 0, this._caption);
+    if (this._hasNoItemOption) {
+      display.drawText(0, 1, '0 - no item');
+    }
     let row = 0;
     for (let i = 0; i < this._items.length; i++) {
       const item = this._items[i];
@@ -57,7 +61,15 @@ class ItemListScreen {
           this._canSelectMultipleItems &&
           this._selectedIndices[i]
         ) ? '+' : '-';
-        display.drawText(0, 2 + row, `${letter} ${selectionState} ${item.describe()}`);
+        // Check if the item is worn or wielded
+        let suffix = '';
+        if (item === this._player.getArmor()) {
+          suffix = ' (wearing)';
+        } else if (item === this._player.getWeapon()) {
+          suffix = ' (wielding)';
+        }
+        // Render at the correct row and add 2.
+        display.drawText(0, 2 + row,  `${letter} ${selectionState} ${item.describe()}${suffix}`);
         row++;
       }
     }
@@ -74,6 +86,9 @@ class ItemListScreen {
         PlayScreen.setSubScreen(undefined);
       } else if (event.keyCode === ROT.VK_RETURN) {
         this.executeOKFunction();
+      } else if (this._canSelectItem && this._hasNoItemOption && event.keyCode === ROT.VK_0) {
+        this._selectedIndices = {};
+        this.executeOkFunction();
       } else if (this._canSelectItem && event.keyCode >= ROT.VK_A && event.keyCode <= ROT.VK_Z) {
         const index = event.keyCode - ROT.VK_A;
         if (this._items[index]) {
@@ -148,6 +163,52 @@ const EatScreen = new ItemListScreen({
     item.eat(this._player);
     if (!item.hasRemainingConsumptions()) {
       this._player.removeItem(key);
+    }
+    return true;
+  },
+});
+
+const WieldScreen = new ItemListScreen({
+  caption: 'Choose the item you wish to wield',
+  canSelect: true,
+  canSelectMultipleItems: false,
+  hasNoItemOption: true,
+  isAcceptable(item) {
+    return item && item.hasMixin('Equippable') && item.isWieldable();
+  },
+  ok(selectedItems) {
+    const keys = Object.keys(selectedItems);
+    if (keys.length === 0) {
+      this._player.unwield();
+      Game.sendMessage(this._player, 'You are empty handed.');
+    } else {
+      const item = selectedItems[keys[0]];
+      this._player.unequip(item);
+      this._player.wield(item);
+      Game.sendMessage(this._player, 'You are wielding %s.', [item.describeA()]);
+    }
+    return true;
+  },
+});
+
+const WearScreen = new ItemListScreen({
+  caption: 'Choose the item you wish to wear',
+  canSelect: true,
+  canSelectMultipleItems: false,
+  hasNoItemOption: true,
+  isAcceptable(item) {
+    return item && item.hasMixin('Equippable') && item.isWearable();
+  },
+  ok(selectedItems) {
+    const keys = Object.keys(selectedItems);
+    if (keys.length === 0) {
+      this._player.unwield();
+      Game.sendMessage(this._player, 'You are not wearing anthing.');
+    } else {
+      const item = selectedItems[keys[0]];
+      this._player.unequip(item);
+      this._player.wear(item);
+      Game.sendMessage(this._player, 'You are wearing %s.', [item.describeA()]);
     }
     return true;
   },
@@ -290,45 +351,49 @@ const PlayScreen = {
       } else if (event.keyCode === ROT.VK_DOWN) {
         this.move(0, 1, 0);
       } else if (event.keyCode === ROT.VK_I) {
-        if (InventoryScreen.setup(this._player, this._player.getItems())) {
-          // Show the inventory
-          this.setSubScreen(InventoryScreen);
-        } else {
-          // If the player has no items, send a message and don't take a turn
-          Game.sendMessage(this._player, 'You are not carrying anything!');
-          Game.refresh();
-          this._player.clearMessages();
-        }
+        // Show the inventory screen
+        this.showItemsSubScreen(
+          InventoryScreen,
+          this._player.getItems(),
+          'You are not carrying anything.'
+        );
         return;
       } else if (event.keyCode === ROT.VK_D) {
-        if (DropScreen.setup(this._player, this._player.getItems())) {
-          // Show the drop screen
-          this.setSubScreen(DropScreen);
-        } else {
-          // If the player has no items, send a message and don't take a turn
-          Game.sendMessage(this._player, 'You have nothing to drop!');
-          Game.refresh();
-          this._player.clearMessages();
-        }
-        return;
+        // Show the drop screen
+        this.showItemsSubScreen(
+          DropScreen,
+          this._player.getItems(),
+          'You have nothing to drop.'
+        );
       } else if (event.keyCode === ROT.VK_E) {
-        if (EatScreen.setup(this._player, this._player.getItems())) {
-          // Show the eat screen
-          this.setSubScreen(EatScreen);
+        // Show the drop screen
+        this.showItemsSubScreen(
+          EatScreen,
+          this._player.getItems(),
+          'You have nothing to eat.'
+        );
+        return;
+      } else if (event.keyCode === ROT.VK_W) {
+        if (event.shiftKey) {
+          // Show the wear screen
+          this.showItemsSubScreen(
+            WearScreen,
+            this._player.getItems(),
+            'You have nothing to wear.'
+          );
         } else {
-          // If the player has no items, send a message and don't take a turn
-          Game.sendMessage(this._player, 'You have nothing to eat!');
-          Game.refresh();
-          this._player.clearMessages();
+          // Show the wield screen
+          this.showItemsSubScreen(
+            WieldScreen,
+            this._player.getItems(),
+            'You have nothing to wield.'
+          );
         }
         return;
       } else if (event.keyCode === ROT.VK_COMMA) {
         const items = this._map.getItemsAt(this._player.getX(), this._player.getY(), this._player.getZ());
-        // If there are no items, show a message
-        if (!items) {
-          Game.sendMessage(this._player, 'There is nothing here to pick up.');
-        } else if (items.length === 1) {
-          // If only one item, try to pick it up
+        // If there is only one item, directly pick it up
+        if (items && items.length === 1) {
           const item = items[0];
           if (this._player.pickupItems([0])) {
             Game.sendMessage(this._player, 'You pick up %s.', [item.describeA()]);
@@ -336,10 +401,11 @@ const PlayScreen = {
             Game.sendMessage(this._player, 'Your inventory is full! Nothing was picked up.');
           }
         } else {
-          // Show the pickup screen if there are any items
-          PickupScreen.setup(this._player, items);
-          this.setSubScreen(PickupScreen);
-          return;
+          this.showItemsSubScreen(
+            PickupScreen,
+            items,
+            'There is nothing here to pick up.'
+          );
         }
       } else {
         return;
@@ -355,6 +421,15 @@ const PlayScreen = {
         return;
       }
       this._map.getEngine().unlock();
+    }
+  },
+
+  showItemsSubScreen(subScreen, items, emptyMessage) {
+    if (items && subScreen.setup(this._player, items) > 0) {
+      this.setSubScreen(subScreen);
+    } else {
+      Game.sendMessage(this._player, emptyMessage);
+      Game.refresh();
     }
   },
 

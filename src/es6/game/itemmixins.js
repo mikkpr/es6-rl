@@ -27,3 +27,25 @@ export const Edible = {
     }
   },
 };
+
+export const Equippable = {
+  name: 'Equippable',
+  init(template) {
+    this._attackValue = template.attackValue || 0;
+    this._defenseValue = template.defenseValue || 0;
+    this._wieldable = template.wieldable || false;
+    this._wearable = template.wearable || false;
+  },
+  getAttackValue() {
+    return this._attackValue;
+  },
+  getDefenseValue() {
+    return this._defenseValue;
+  },
+  isWieldable() {
+    return this._wieldable;
+  },
+  isWearable() {
+    return this._wearable;
+  },
+};
