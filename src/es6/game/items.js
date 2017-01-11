@@ -32,6 +32,11 @@ ItemRepository.define('rock', {
   name: 'rock',
   char: '*',
   fg: 'white',
+  attackValue: 3,
+  wieldable: true,
+  mixins: [
+    Equippable,
+  ],
 });
 
 ItemRepository.define('corpse', {
