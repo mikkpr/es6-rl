@@ -85,6 +85,20 @@ export const Destructible = {
     }
     return this._defenseValue + modifier;
   },
+  setHP(hp) {
+    this._hp = hp;
+  },
+  increaseDefenseValue(value) {
+    const increase = value || 2;
+    this._defenseValue += increase;
+    Game.sendMessage(this, 'You look tougher!');
+  },
+  increaseMaxHP(value) {
+    const increase = value || 10;
+    this._maxHP += increase;
+    this._HP += increase;
+    Game.sendMessage(this, 'You look healthier!');
+  },
   takeDamage(attacker, damage) {
     this._HP -= damage;
 
@@ -93,10 +107,22 @@ export const Destructible = {
       if (this.hasMixin('CorpseDropper')) {
         this.tryDropCorpse();
       }
-      if (attacker.hasMixin('Experience')) {
-        attacker.addExperience(this._experienceValue);
-      }
       this.kill();
+
+      if (attacker.hasMixin('Experience')) {
+        let exp = this.getMaxHP() + this.getDefenseValue();
+        if (this.hasMixin('Attacker')) {
+          exp += this.getAttackValue();
+        }
+        // Account for level differences
+        if (this.hasMixin('ExperienceGainer')) {
+          exp -= (attacker.getLevel() - this.getLevel()) * 3;
+        }
+        // Only give experience if more than 0.
+        if (exp > 0) {
+          attacker.giveExperience(exp);
+        }
+      }
     }
   },
 };
@@ -128,6 +154,11 @@ export const Attacker = {
       }
     }
     return this._attackValue + modifier;
+  },
+  increaseAttackValue(value) {
+    const increase = value || 2;
+    this._attackValue += increase;
+    Game.sendMessage(this, 'You look stronger!');
   },
   attack(target) {
     if (target.hasMixin('Destructible')) {
@@ -168,6 +199,11 @@ export const Sight = {
   },
   getSightRadius() {
     return this._sightRadius;
+  },
+  increaseSightRadius(value) {
+    const increase = value || 1;
+    this._sightRadius += increase;
+    Game.sendMessage(this, 'You are more aware of your surroundings!');
   },
   canSee(entity) {
     // If not on the same map or on different floors, then exit early
@@ -288,17 +324,76 @@ export const TaskActor = {
 export const Experience = {
   name: 'Experience',
   groupName: 'Experience',
-  init() {
-    this._experience = 0;
+  init(template) {
+    this._level = template.level || 1;
+    this._experience = template.experience || 0;
+    this._statPointsPerLevel = template.statPointsPerLevel || 1;
+    this._statPoints = 0;
+
+    this._statOptions = [];
+    if (this.hasMixin('Attacker')) {
+      this._statOptions.push(['Increase attack value', this.increaseAttackValue]);
+    }
+    if (this.hasMixin('Destructible')) {
+      this._statOptions.push(['Increase defense value', this.increaseDefenseValue]);
+      this._statOptions.push(['Increase max health', this.increaseMaxHP]);
+    }
+    if (this.hasMixin('Sight')) {
+      this._statOptions.push(['Increase sight range', this.increaseSightRadius]);
+    }
+  },
+  getLevel() {
+    return this._level;
   },
   getExperience() {
     return this._experience;
   },
-  setExperience(exp) {
-    this._experience = exp;
+  getNextLevelExperience() {
+    return (this._level * this._level) * 10;
   },
-  addExperience(exp) {
-    this._experience += exp;
+  getStatPoints() {
+    return this._statPoints;
+  },
+  setStatPoints(statPoints) {
+    this._statPoints = statPoints;
+  },
+  getStatOptions() {
+    return this._statOptions;
+  },
+  giveExperience(exp) {
+    let points = exp;
+    let statPointsGained = 0;
+    let levelsGained = 0;
+    // Loop until we've allocated all points.
+    while (points > 0) {
+      // Check if adding in the points will surpass the level threshold.
+      if (this._experience + points >= this.getNextLevelExperience()) {
+        // Fill our experience till the next threshold.
+        const usedPoints = this.getNextLevelExperience() - this._experience;
+        points -= usedPoints;
+        this._experience += usedPoints;
+        // Level up our entity!
+        this._level++;
+        levelsGained++;
+        this._statPoints += this._statPointsPerLevel;
+        statPointsGained += this._statPointsPerLevel;
+      } else {
+        // Simple case - just give the experience.
+        this._experience += points;
+        points = 0;
+      }
+    }
+    // Check if we gained at least one level.
+    if (levelsGained > 0) {
+      Game.sendMessage(this, 'You advance to level %d.', [this._level]);
+      // Heal the entity if possible.
+      if (this.hasMixin('Destructible')) {
+        this.setHP(this.getMaxHP());
+      }
+      if (this.hasMixin('StatGainer')) {
+        this.onGainLevel();
+      }
+    }
   },
 };
 
@@ -448,5 +543,26 @@ export const Equipper = {
     if (this._armor === item) {
       this.takeOff();
     }
+  },
+};
+
+export const RandomStatGainer = {
+  name: 'RandomStatGainer',
+  groupName: 'StatGainer',
+  onGainLevel() {
+    const statOptions = this.getStatOptions();
+    while (this.getStatPoints() > 0) {
+      statOptions.random()[1].call(this);
+      this.setStatPoints(this.getStatPoints() - 1);
+    }
+  },
+};
+
+export const PlayerStatGainer = {
+  name: 'PlayerStatGainer',
+  groupName: 'StatGainer',
+  onGainLevel() {
+    Game.Screen.GainStatScreen.setup(this);
+    Game.Screen.PlayScreen.setSubScreen(Game.Screen.GainStatScreen);
   },
 };

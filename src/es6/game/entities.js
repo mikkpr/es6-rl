@@ -12,6 +12,8 @@ import {
   Hunger,
   CorpseDropper,
   Equipper,
+  RandomStatGainer,
+  PlayerStatGainer,
 } from './entitymixins';
 
 import Entity from './entity';
@@ -35,6 +37,7 @@ export const PlayerTemplate = {
     Inventory,
     Hunger,
     Equipper,
+    PlayerStatGainer,
   ],
 };
 
@@ -56,6 +59,8 @@ EntityRepository.define('fungus', {
   mixins: [
     FungusActor,
     Destructible,
+    Experience,
+    RandomStatGainer,
   ],
 });
 
@@ -72,6 +77,8 @@ EntityRepository.define('bat', {
     Attacker,
     Destructible,
     CorpseDropper,
+    Experience,
+    RandomStatGainer,
   ],
 });
 
@@ -87,6 +94,8 @@ EntityRepository.define('newt', {
     Attacker,
     Destructible,
     CorpseDropper,
+    Experience,
+    RandomStatGainer,
   ],
 });
 
@@ -104,6 +113,8 @@ EntityRepository.define('kobold', {
     Attacker,
     Destructible,
     CorpseDropper,
+    Experience,
+    RandomStatGainer,
   ],
 });
 

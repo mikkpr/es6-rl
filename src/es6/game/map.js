@@ -30,7 +30,13 @@ export default class Map {
     for (let z = 0; z < this._depth; z++) {
       // create monsters
       for (let i = 0; i < (25 + 4 * z); i++) {
-        this.addEntityAtRandomPosition(EntityRepository.createRandom(), z);
+        const entity = EntityRepository.createRandom();
+        this.addEntityAtRandomPosition(entity, z);
+        if (entity.hasMixin('Experience')) {
+          for (let level = 0; level < z; level++) {
+            entity.giveExperience(entity.getNextLevelExperience() - entity.getExperience());
+          }
+        }
       }
 
       // create items

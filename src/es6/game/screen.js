@@ -214,6 +214,51 @@ const WearScreen = new ItemListScreen({
   },
 });
 
+const GainStatScreen = {
+  setup(entity) {
+    this._entity = entity;
+    this._options = entity.getStatOptions();
+  },
+  render(display) {
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    display.drawText(0, 0, 'Choose a stat to increase: ');
+
+    // Iterate through each of our options
+    for (let i = 0; i < this._options.length; i++) {
+      const x = 0;
+      const y = 2 + i;
+      const text = `${letters.substring(i, i + 1)} - ${this._options[i][0]}`;
+      display.drawText(x, y, text);
+    }
+
+    // Render remaining stat points
+    const text = `Remaining points: ${this._entity.getStatPoints()}`;
+    display.drawText(0, 4 + this._options.length, text);
+  },
+  handleInput(type, event) {
+    if (type === 'keydown') {
+      // If a letter was pressed, check if it matches to a valid option.
+      if (event.keyCode >= ROT.VK_A && event.keyCode <= ROT.VK_Z) {
+        // Check if it maps to a valid item by subtracting 'a' from the character
+        // to know what letter of the alphabet we used.
+        const index = event.keyCode - ROT.VK_A;
+        if (this._options[index]) {
+          // Call the stat increasing function
+          this._options[index][1].call(this._entity);
+          // Decrease stat points
+          this._entity.setStatPoints(this._entity.getStatPoints() - 1);
+          // If we have no stat points left, exit the screen, else refresh
+          if (this._entity.getStatPoints() == 0) {
+            Game.Screen.PlayScreen.setSubScreen(undefined);
+          } else {
+            Game.refresh();
+          }
+        }
+      }
+    }
+  },
+};
+
 const PlayScreen = {
   _map: null,
   _player: null,
@@ -316,17 +361,22 @@ const PlayScreen = {
     });
 
     // draw player stats
-    let stats = vsprintf('HP: %d/%d EXP: %d', [
+    const stats = vsprintf('HP:%d/%d ATK:%d DEF:%d', [
       this._player.getHP(),
       this._player.getMaxHP(),
+      this._player.getAttackValue(),
+      this._player.getDefenseValue(),
+    ]);
+    const stats2 = vsprintf('L:%d EXP:%d', [
+      this._player.getLevel(),
       this._player.getExperience(),
     ]);
-    stats = `%c{white}%b{black}${stats}`;
-    display.drawText(0, screenHeight, stats);
+    display.drawText(0, screenHeight, `%c{white}%b{black}${stats}`);
+    display.drawText(screenWidth - stats2.length, screenHeight, `%c{white}%b{black}${stats2}`);
 
     // draw hunger state
     const hungerState = this._player.getHungerState();
-    display.drawText(screenWidth - hungerState.length, screenHeight, hungerState);
+    display.drawText(screenWidth - hungerState.length, screenHeight - 1, hungerState);
   },
 
   handleInput(type, event) {
@@ -477,4 +527,5 @@ export default {
   PlayScreen,
   WinScreen,
   LoseScreen,
+  GainStatScreen,
 };
