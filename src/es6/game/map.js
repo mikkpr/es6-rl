@@ -24,6 +24,7 @@ export default class Map {
     this._scheduler = new ROT.Scheduler.Simple();
     this._engine = new ROT.Engine(this._scheduler);
 
+    this._player = player;
     this.addEntityAtRandomPosition(player, 0);
 
     for (let z = 0; z < this._depth; z++) {
@@ -52,6 +53,10 @@ export default class Map {
     // exploration data
     this._explored = new Array(this._depth);
     this.setupExploredArray();
+  }
+
+  getPlayer() {
+    return this._player;
   }
 
   getWidth() {

@@ -8,6 +8,7 @@ export default class Entity extends DynamicGlyph {
     this._x = properties.x || 0;
     this._y = properties.y || 0;
     this._z = properties.z || 0;
+    this._speed = properties.speed || 1000;
     this._map = null;
     this._alive = true;
   }
@@ -32,6 +33,14 @@ export default class Entity extends DynamicGlyph {
     } else {
       this.getMap().removeEntity(this);
     }
+  }
+
+  setSpeed(speed) {
+    this._speed = speed;
+  }
+
+  getSpeed() {
+    return this._speed;
   }
 
   setX(x) {
@@ -81,9 +90,9 @@ export default class Entity extends DynamicGlyph {
     }
   }
 
-  tryMove(x, y, z, map) {
-    const tile = map.getTile(x, y, this.getZ());
-    const target = map.getEntityAt(x, y, this.getZ());
+  tryMove(x, y, z) {
+    const tile = this._map.getTile(x, y, this.getZ());
+    const target = this._map.getEntityAt(x, y, this.getZ());
 
     if (z < this.getZ()) {
       if (tile !== StairsUpTile) {
@@ -121,7 +130,7 @@ export default class Entity extends DynamicGlyph {
       return true;
     } else if (tile.isDiggable()) {
       if (this.hasMixin('Digger')) {
-        this.dig(x, y, z, map);
+        this.dig(x, y, z, this._map);
         return true;
       }
       return false;

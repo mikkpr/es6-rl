@@ -1,5 +1,6 @@
 import EntityRepository from './entities';
 import ItemRepository from './items';
+import ROT from 'rot-js';
 
 import Game from './index';
 
@@ -168,17 +169,118 @@ export const Sight = {
   getSightRadius() {
     return this._sightRadius;
   },
+  canSee(entity) {
+    // If not on the same map or on different floors, then exit early
+    if (!entity || this._map !== entity.getMap() || this._z !== entity.getZ()) {
+      return false;
+    }
+
+    const otherX = entity.getX();
+    const otherY = entity.getY();
+
+    // If we're not in a square field of view, then we won't be in a real
+    // field of view either.
+    if ((otherX - this._x) * (otherX - this._x) +
+      (otherY - this._y) * (otherY - this._y) >
+      this._sightRadius * this._sightRadius) {
+      return false;
+    }
+
+    // Compute the FOV and check if the coordinates are in there.
+    let found = false;
+    this.getMap().getFOV(this.getZ()).compute(
+      this.getX(),
+      this.getY(),
+      this.getSightRadius(),
+      (x, y) => {
+        if (x === otherX && y === otherY) {
+          found = true;
+        }
+      }
+    );
+    return found;
+  },
 };
 
-export const WanderActor = {
-  name: 'WanderActor',
+export const TaskActor = {
+  name: 'TaskActor',
   groupName: 'Actor',
+  init(template) {
+    this._tasks = template.tasks || ['wander'];
+  },
   act() {
-    const moveOffset = (Math.round(Math.random()) === 1) ? 1 : -1;
-    if (Math.round(Math.random()) === 1) {
-      this.tryMove(this.getX() + moveOffset, this.getY(), this.getZ(), this.getMap());
+    // Iterate through all our tasks
+    for (let i = 0; i < this._tasks.length; i++) {
+      const task = this._tasks[i];
+      if (this.canDoTask(task)) {
+        // If we can perform the task, execute the function for it.
+        this[task]();
+        return;
+      }
+    }
+  },
+  canDoTask(task) {
+    if (task === 'hunt') {
+      return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
+    } else if (task === 'wander') {
+      return true;
     } else {
-      this.tryMove(this.getX(), this.getY() + moveOffset, this.getZ(), this.getMap());
+      throw new Error(`Tried to perform undefined task ${task}`);
+    }
+  },
+  hunt() {
+    const player = this.getMap().getPlayer();
+
+    // If we are adjacent to the player, then attack instead of hunting.
+    const offsets = (
+      Math.abs(player.getX() - this.getX()) +
+      Math.abs(player.getY() - this.getY())
+    );
+    if (offsets === 1) {
+      if (this.hasMixin('Attacker')) {
+        this.attack(player);
+        return;
+      }
+    }
+
+    // Generate the path and move to the first tile.
+    const source = this;
+    const z = source.getZ();
+    const path = new ROT.Path.AStar(
+      player.getX(),
+      player.getY(),
+      (x, y) => {
+        // If an entity is present at the tile, can't move there.
+        const entity = source.getMap().getEntityAt(x, y, z);
+        if (entity && entity !== player && entity !== source) {
+          return false;
+        }
+        return source.getMap().getTile(x, y, z).isWalkable();
+      },
+      { topology: 4 }
+    );
+    // Once we've gotten the path, we want to move to the second cell that is
+    // passed in the callback (the first is the entity's strting point)
+    let count = 0;
+    path.compute(
+      source.getX(),
+      source.getY(),
+      (x, y) => {
+        if (count == 1) {
+          source.tryMove(x, y, z);
+        }
+        count++;
+      }
+    );
+  },
+  wander() {
+    // Flip coin to determine if moving by 1 in the positive or negative direction
+    const moveOffset = (Math.round(Math.random()) === 1) ? 1 : -1;
+    // Flip coin to determine if moving in x direction or y direction
+    if (Math.round(Math.random()) === 1) {
+      this.tryMove(this.getX() + moveOffset, this.getY(), this.getZ());
+    } else {
+      this.tryMove(this.getX(), this.getY() + moveOffset, this.getZ());
     }
   },
 };

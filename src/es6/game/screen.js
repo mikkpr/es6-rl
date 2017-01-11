@@ -237,7 +237,7 @@ const PlayScreen = {
     const newY = this._player.getY() + dY;
     const newZ = this._player.getZ() + dZ;
 
-    this._player.tryMove(newX, newY, newZ, this._map);
+    this._player.tryMove(newX, newY, newZ);
   },
 
   render(display) {

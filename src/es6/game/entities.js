@@ -6,7 +6,7 @@ import {
   Digger,
   MessageRecipient,
   Sight,
-  WanderActor,
+  TaskActor,
   Experience,
   Inventory,
   Hunger,
@@ -52,6 +52,7 @@ EntityRepository.define('fungus', {
   fg: 'green',
   maxHP: 10,
   experienceValue: 1,
+  speed: 100,
   mixins: [
     FungusActor,
     Destructible,
@@ -65,8 +66,9 @@ EntityRepository.define('bat', {
   maxHP: 5,
   attackValue: 4,
   experienceValue: 3,
+  speed: 2000,
   mixins: [
-    WanderActor,
+    TaskActor,
     Attacker,
     Destructible,
     CorpseDropper,
@@ -81,7 +83,24 @@ EntityRepository.define('newt', {
   attackValue: 2,
   experienceValue: 2,
   mixins: [
-    WanderActor,
+    TaskActor,
+    Attacker,
+    Destructible,
+    CorpseDropper,
+  ],
+});
+
+EntityRepository.define('kobold', {
+  name: 'kobold',
+  char: 'k',
+  fg: 'white',
+  maxHP: 6,
+  attackValue: 4,
+  sightRadius: 5,
+  tasks: ['hunt', 'wander'],
+  mixins: [
+    TaskActor,
+    Sight,
     Attacker,
     Destructible,
     CorpseDropper,
