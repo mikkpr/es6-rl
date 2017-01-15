@@ -21,27 +21,28 @@ export default class DynamicGlyph extends Glyph {
         if (key !== 'init' && key !== 'name' && key !== 'groupName' && !this.hasOwnProperty(key)) {
           this[key] = mixin[key];
         }
+      }
 
-        this._attachedMixins[mixin.name] = true;
-        if (mixin.groupName) {
-          this._attachedMixinGroups[mixin.groupName] = true;
-        }
+      this._attachedMixins[mixin.name] = true;
+      if (mixin.groupName) {
+        this._attachedMixinGroups[mixin.groupName] = true;
+      }
 
-        if (mixin.listeners) {
-          Object.keys(mixin.listeners).forEach(event => {
-            if (!this._listeners[event]) {
-              this._listeners[event] = [];
-            }
+      if (mixin.listeners) {
+        Object.keys(mixin.listeners).forEach(event => {
+          if (!this._listeners[event]) {
+            this._listeners[event] = [];
+          }
 
-            if (this._listeners[event].indexOf(mixin.listeners[event]) < 0) {
-              this._listeners[event].push(mixin.listeners[event]);
-            }
-          });
-        }
+          this._listeners[event].push(mixin.listeners[event]);
+        });
+      }
+    });
 
-        if (mixin.init) {
-          mixin.init.call(this, properties);
-        }
+    // init mixin
+    mixins.forEach(mixin => {
+      if (mixin.init) {
+        mixin.init.call(this, properties);
       }
     });
   }
