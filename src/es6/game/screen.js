@@ -1,11 +1,11 @@
 import ROT from 'rot-js';
-import Map from './map';
+import Cave from './maps/cave';
 import { Player } from './entities';
 import Game from './index';
 import { vsprintf } from 'sprintf-js';
 import Builder from './builder';
 
-const StartScreen = {
+export const StartScreen = {
   enter: () => {},
   exit: () => {},
   render: (display) => {
@@ -15,7 +15,7 @@ const StartScreen = {
   handleInput: (type, event) => {
     if (type === 'keydown') {
       if (event.keyCode === ROT.VK_RETURN) {
-        Game.switchScreen(PlayScreen);
+        Game.switchScreen('PlayScreen');
       }
     }
   },
@@ -83,7 +83,7 @@ class ItemListScreen {
           Object.keys(this._selectedIndices).length === 0
         ))
       ) {
-        PlayScreen.setSubScreen(undefined);
+        Game.getScreen('PlayScreen').setSubScreen(undefined);
       } else if (event.keyCode === ROT.VK_RETURN) {
         this.executeOKFunction();
       } else if (this._canSelectItem && this._hasNoItemOption && event.keyCode === ROT.VK_0) {
@@ -114,7 +114,7 @@ class ItemListScreen {
       selectedItems[key] = this._items[key];
     });
 
-    PlayScreen.setSubScreen(undefined);
+    Game.getScreen('PlayScreen').setSubScreen(undefined);
 
     if (this._okFunction(selectedItems)) {
       this._player.getMap().getEngine().unlock();
@@ -122,12 +122,12 @@ class ItemListScreen {
   }
 }
 
-const InventoryScreen = new ItemListScreen({
+export const InventoryScreen = new ItemListScreen({
   caption: 'Inventory',
   canSelect: false,
 });
 
-const PickupScreen = new ItemListScreen({
+export const PickupScreen = new ItemListScreen({
   caption: 'Choose the items you wish to pickup',
   canSelect: true,
   canSelectMultipleItems: true,
@@ -140,7 +140,7 @@ const PickupScreen = new ItemListScreen({
   },
 });
 
-const DropScreen = new ItemListScreen({
+export const DropScreen = new ItemListScreen({
   caption: 'Choose the item you wish to drop',
     canSelect: true,
     canSelectMultipleItems: false,
@@ -151,7 +151,7 @@ const DropScreen = new ItemListScreen({
     },
 });
 
-const EatScreen = new ItemListScreen({
+export const EatScreen = new ItemListScreen({
   caption: 'Choose the item you wish to eat',
   canSelect: true,
   canSelectMultipleItems: false,
@@ -168,7 +168,7 @@ const EatScreen = new ItemListScreen({
   },
 });
 
-const WieldScreen = new ItemListScreen({
+export const WieldScreen = new ItemListScreen({
   caption: 'Choose the item you wish to wield',
   canSelect: true,
   canSelectMultipleItems: false,
@@ -191,7 +191,7 @@ const WieldScreen = new ItemListScreen({
   },
 });
 
-const WearScreen = new ItemListScreen({
+export const WearScreen = new ItemListScreen({
   caption: 'Choose the item you wish to wear',
   canSelect: true,
   canSelectMultipleItems: false,
@@ -214,7 +214,7 @@ const WearScreen = new ItemListScreen({
   },
 });
 
-const GainStatScreen = {
+export const GainStatScreen = {
   setup(entity) {
     this._entity = entity;
     this._options = entity.getStatOptions();
@@ -248,8 +248,8 @@ const GainStatScreen = {
           // Decrease stat points
           this._entity.setStatPoints(this._entity.getStatPoints() - 1);
           // If we have no stat points left, exit the screen, else refresh
-          if (this._entity.getStatPoints() == 0) {
-            Game.Screen.PlayScreen.setSubScreen(undefined);
+          if (this._entity.getStatPoints() === 0) {
+            Game.getScreen('PlayScreen').setSubScreen(undefined);
           } else {
             Game.refresh();
           }
@@ -259,8 +259,7 @@ const GainStatScreen = {
   },
 };
 
-const PlayScreen = {
-  _map: null,
+export const PlayScreen = {
   _player: null,
   _gameEnded: false,
   _subScreen: null,
@@ -270,11 +269,11 @@ const PlayScreen = {
     const height = 100;
     const depth = 5;
 
-    const tiles = new Builder(width, height, depth).getTiles();
     this._player = new Player();
+    const tiles = new Builder(width, height, depth).getTiles();
 
-    this._map = new Map(tiles, this._player);
-    this._map.getEngine().start();
+    const map = new Cave(tiles, this._player);
+    map.getEngine().start();
   },
 
   move(dX, dY, dZ) {
@@ -294,18 +293,18 @@ const PlayScreen = {
     const screenWidth = Game.getScreenWidth();
     const screenHeight = Game.getScreenHeight();
 
-    const topLeftX = Math.min(Math.max(0, this._player.getX() - (screenWidth / 2)), this._map.getWidth() - screenWidth);
-    const topLeftY = Math.min(Math.max(0, this._player.getY() - (screenHeight / 2)), this._map.getHeight() - screenHeight);
+    const topLeftX = Math.min(Math.max(0, this._player.getX() - (screenWidth / 2)), this._player.getMap().getWidth() - screenWidth);
+    const topLeftY = Math.min(Math.max(0, this._player.getY() - (screenHeight / 2)), this._player.getMap().getHeight() - screenHeight);
 
     // calculate FOV and set explored tiles
     const visibleCells = {};
-    const map = this._map;
+    const map = this._player.getMap();
     const currentDepth = this._player.getZ();
     map.getFOV(currentDepth).compute(
       this._player.getX(),
       this._player.getY(),
       this._player.getSightRadius(),
-      (x, y, radius, visibility) => {
+      (x, y) => {
         visibleCells[`${x},${y}`] = true;
         map.setExplored(x, y, currentDepth, true);
       }
@@ -316,7 +315,7 @@ const PlayScreen = {
       for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
         if (map.getExplored(x, y, currentDepth)) {
           // first, try rendering the tile itself
-          let glyph = this._map.getTile(x, y, currentDepth);
+          let glyph = map.getTile(x, y, currentDepth);
           let foreGround = glyph.getForeground();
 
           if (visibleCells[`${x},${y}`]) {
@@ -382,7 +381,7 @@ const PlayScreen = {
   handleInput(type, event) {
     if (this._gameEnded) {
       if (type === 'keydown' && event.keyCode === ROT.VK_RETURN) {
-        Game.switchScreen(LoseScreen);
+        Game.switchScreen('LoseScreen');
       }
       return;
     }
@@ -441,7 +440,7 @@ const PlayScreen = {
         }
         return;
       } else if (event.keyCode === ROT.VK_COMMA) {
-        const items = this._map.getItemsAt(this._player.getX(), this._player.getY(), this._player.getZ());
+        const items = this._player.getMap().getItemsAt(this._player.getX(), this._player.getY(), this._player.getZ());
         // If there is only one item, directly pick it up
         if (items && items.length === 1) {
           const item = items[0];
@@ -460,7 +459,7 @@ const PlayScreen = {
       } else {
         return;
       }
-      this._map.getEngine().unlock();
+      this._player.getMap().getEngine().unlock();
     } else if (type === 'keypress') {
       const keyChar = String.fromCharCode(event.charCode);
       if (keyChar === '>') {
@@ -470,7 +469,7 @@ const PlayScreen = {
       } else {
         return;
       }
-      this._map.getEngine().unlock();
+      this._player.getMap().getEngine().unlock();
     }
   },
 
@@ -495,7 +494,7 @@ const PlayScreen = {
   exit() { },
 };
 
-const WinScreen = {
+export const WinScreen = {
   enter: () => {},
   exit: () => {},
   render: (display) => {
@@ -511,7 +510,7 @@ const WinScreen = {
   handleInput: () => { },
 };
 
-const LoseScreen = {
+export const LoseScreen = {
   enter: () => {},
   exit: () => {},
   render: (display) => {
@@ -520,12 +519,4 @@ const LoseScreen = {
     }
   },
   handleInput: () => { },
-};
-
-export default {
-  StartScreen,
-  PlayScreen,
-  WinScreen,
-  LoseScreen,
-  GainStatScreen,
 };

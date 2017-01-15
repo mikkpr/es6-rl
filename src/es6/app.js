@@ -14,7 +14,7 @@ import Game from './game';
   //   applyMiddleware(createLogger())
   // );
 
-  Game.switchScreen(Game.Screen.StartScreen);
+  Game.switchScreen('StartScreen');
 
   const mainDisplay = Game.getDisplay();
   // const gameConsole = new ROT.Display({

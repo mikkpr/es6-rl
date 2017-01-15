@@ -1,7 +1,7 @@
 import ROT from 'rot-js';
 import { vsprintf } from 'sprintf-js';
+import { PlayScreen, StartScreen, WinScreen, LoseScreen, GainStatScreen } from './screen';
 
-import Screen from './screen';
 import { MessageRecipient } from './entitymixins';
 
 const displayDefaults = {
@@ -12,8 +12,6 @@ const displayDefaults = {
 };
 
 export const Game = {
-  Screen,
-
   _display: null,
   _currentScreen: null,
   _screenWidth: displayDefaults.width,
@@ -30,7 +28,19 @@ export const Game = {
       });
     };
     ['keydown', 'keyup', 'keypress'].forEach(bindEventToScreen);
+
+    this._screens = {
+      PlayScreen,
+      StartScreen,
+      WinScreen,
+      LoseScreen,
+      GainStatScreen,
+    };
     return this;
+  },
+
+  getScreen(screen) {
+    return this._screens[screen];
   },
 
   refresh() {
@@ -57,7 +67,7 @@ export const Game = {
 
     this.getDisplay().clear();
 
-    this._currentScreen = screen;
+    this._currentScreen = this._screens[screen];
 
     if (!this._currentScreen !== null) {
       this._currentScreen.enter();

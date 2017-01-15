@@ -9,6 +9,8 @@ export default class DynamicGlyph extends Glyph {
     this._attachedMixins = {};
     this._attachedMixinGroups = {};
 
+    this._listeners = {};
+
     const mixins = properties.mixins || [];
     mixins.forEach(mixin => {
       const keys = Object.keys(mixin);
@@ -25,10 +27,32 @@ export default class DynamicGlyph extends Glyph {
           this._attachedMixinGroups[mixin.groupName] = true;
         }
 
+        if (mixin.listeners) {
+          Object.keys(mixin.listeners).forEach(event => {
+            if (!this._listeners[event]) {
+              this._listeners[event] = [];
+            }
+
+            if (this._listeners[event].indexOf(mixin.listeners[event]) < 0) {
+              this._listeners[event].push(mixin.listeners[event]);
+            }
+          });
+        }
+
         if (mixin.init) {
           mixin.init.call(this, properties);
         }
       }
+    });
+  }
+
+  raiseEvent(event, ...args) {
+    if (!this._listeners[event]) {
+      return;
+    }
+
+    this._listeners[event].forEach(callback => {
+      callback.apply(this, args);
     });
   }
 

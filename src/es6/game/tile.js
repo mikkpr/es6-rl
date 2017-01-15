@@ -50,3 +50,17 @@ export const StairsDownTile = new Tile({
   walkable: true,
   blocksLight: false,
 });
+
+export const HoleToCavernTile = new Tile({
+  char: 'O',
+  fg: 'white',
+  walkable: true,
+  blocksLight: false,
+});
+
+export const WaterTile = new Tile({
+  char: '~',
+  fg: 'blue',
+  walkable: false,
+  blocksLight: false,
+});

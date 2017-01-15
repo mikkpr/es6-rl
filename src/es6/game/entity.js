@@ -1,6 +1,7 @@
 import Game from './index';
 import DynamicGlyph from './dynamicglyph';
-import { StairsUpTile, StairsDownTile } from './tile';
+import { StairsUpTile, StairsDownTile, HoleToCavernTile } from './tile';
+import BossCavern from './maps/bosscavern';
 
 export default class Entity extends DynamicGlyph {
   constructor(properties = {}) {
@@ -102,7 +103,9 @@ export default class Entity extends DynamicGlyph {
         this.setPosition(x, y, z);
       }
     } else if (z > this.getZ()) {
-      if (tile !== StairsDownTile) {
+      if (tile === HoleToCavernTile && this.hasMixin('PlayerActor')) {
+        this.switchMap(new BossCavern());
+      } else if (tile !== StairsDownTile) {
         Game.sendMessage(this, "You can't go down here!");
       } else {
         Game.sendMessage(this, 'You descend to level %d', [z + 1]);
@@ -136,5 +139,18 @@ export default class Entity extends DynamicGlyph {
       return false;
     }
     return false;
+  }
+
+  switchMap(newMap) {
+    if (newMap === this.getMap()) {
+      return;
+    }
+
+    this.getMap().removeEntity(this);
+    this._x = 0;
+    this._y = 0;
+    this._z = 0;
+
+    newMap.addEntity(this);
   }
 }

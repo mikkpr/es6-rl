@@ -1,12 +1,12 @@
 import ROT from 'rot-js';
-import EntityRepository from './entities';
-import ItemRepository from './items';
 import { NullTile, FloorTile } from './tile';
 
 export default class Map {
-  constructor(tiles, player) {
+  constructor(tiles) {
     // tiles
     this._tiles = tiles;
+
+    // dimensions
     this._depth = tiles.length;
     this._width = tiles[0].length;
     this._height = tiles[0][0].length;
@@ -23,38 +23,6 @@ export default class Map {
 
     this._scheduler = new ROT.Scheduler.Simple();
     this._engine = new ROT.Engine(this._scheduler);
-
-    this._player = player;
-    this.addEntityAtRandomPosition(player, 0);
-
-    for (let z = 0; z < this._depth; z++) {
-      // create monsters
-      for (let i = 0; i < (25 + 4 * z); i++) {
-        const entity = EntityRepository.createRandom();
-        this.addEntityAtRandomPosition(entity, z);
-        if (entity.hasMixin('Experience')) {
-          for (let level = 0; level < z; level++) {
-            entity.giveExperience(entity.getNextLevelExperience() - entity.getExperience());
-          }
-        }
-      }
-
-      // create items
-      for (let i = 0; i < (10 + 3 * z); i++) {
-        this.addItemAtRandomPosition(ItemRepository.createRandom(), z);
-      }
-    }
-
-    // Add weapons and armor to the map in random positions
-    const templates = [
-      'dagger', 'sword', 'staff', 'tunic', 'chainmail', 'platemail',
-    ];
-    for (let i = 0; i < templates.length; i++) {
-      this.addItemAtRandomPosition(
-        ItemRepository.create(templates[i]),
-        Math.floor(this._depth * Math.random())
-      );
-    }
 
     // exploration data
     this._explored = new Array(this._depth);
@@ -133,7 +101,7 @@ export default class Map {
         entity.getX() <= rightX &&
         entity.getY() >= topY &&
         entity.getY() <= bottomY &&
-        entity.getZ() == centerZ
+        entity.getZ() === centerZ
       ) {
         return entities.concat([entity]);
       } else {
@@ -149,6 +117,10 @@ export default class Map {
     if (entity.hasMixin('Actor')) {
       this._scheduler.add(entity, true);
     }
+
+    if (entity.hasMixin('PlayerActor')) {
+      this._player = entity;
+    }
   }
 
   addEntityAtRandomPosition(entity, z) {
@@ -163,7 +135,7 @@ export default class Map {
     // delete old entry
     if (typeof oldX === 'number') {
       const oldKey = `${oldX},${oldY},${oldZ}`;
-      if (this._entities[oldKey] == entity) {
+      if (this._entities[oldKey] === entity) {
         delete this._entities[oldKey];
       }
     }
@@ -188,16 +160,20 @@ export default class Map {
 
   removeEntity(entity) {
     const key = `${entity.getX()},${entity.getY()},${entity.getZ()}`;
-    if (this._entities[key] == entity) {
+    if (this._entities[key] === entity) {
       delete this._entities[key];
     }
     if (entity.hasMixin('Actor')) {
       this._scheduler.remove(entity);
     }
+
+    if (entity.hasMixin('PlayerActor')) {
+      this._player = undefined;
+    }
   }
 
   isEmptyFloor(x, y, z) {
-    return this.getTile(x, y, z) == FloorTile && !this.getEntityAt(x, y, z);
+    return this.getTile(x, y, z) === FloorTile && !this.getEntityAt(x, y, z);
   }
 
   setupFOV() {

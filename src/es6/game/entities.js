@@ -7,6 +7,7 @@ import {
   MessageRecipient,
   Sight,
   TaskActor,
+  GiantZombieActor,
   Experience,
   Inventory,
   Hunger,
@@ -106,6 +107,46 @@ EntityRepository.define('kobold', {
   maxHP: 6,
   attackValue: 4,
   sightRadius: 5,
+  tasks: ['hunt', 'wander'],
+  mixins: [
+    TaskActor,
+    Sight,
+    Attacker,
+    Destructible,
+    CorpseDropper,
+    Experience,
+    RandomStatGainer,
+  ],
+});
+
+EntityRepository.define('giant zombie', {
+  name: 'giant zombie',
+  char: 'Z',
+  fg: 'teal',
+  maxHP: 30,
+  attackValue: 8,
+  defenseValue: 5,
+  level: 5,
+  sightRadius: 6,
+  mixins: [
+    GiantZombieActor,
+    Sight,
+    Attacker,
+    Destructible,
+    CorpseDropper,
+    Experience,
+  ],
+}, {
+  disableRandomCreation: true,
+});
+
+EntityRepository.define('slime', {
+  name: 'slime',
+  char: 's',
+  fg: 'lightGreen',
+  maxHP: 10,
+  attackValue: 5,
+  sightRadius: 3,
   tasks: ['hunt', 'wander'],
   mixins: [
     TaskActor,

@@ -17,7 +17,7 @@ export const PlayerActor = {
 
     // detect if game is over
     if (!this._alive) {
-      Game.Screen.PlayScreen.setGameEnded(true);
+      Game.getScreen('PlayScreen').setGameEnded(true);
       Game.sendMessage(this, 'Press [ENTER] to continue.');
     }
     Game.refresh();
@@ -32,7 +32,7 @@ export const FungusActor = {
   name: 'FungusActor',
   groupName: 'Actor',
   init() {
-    this._growthsRemaining = 5;
+    this._growthsRemaining = 2;
   },
   act() {
     if (this._growthsRemaining > 0) {
@@ -65,6 +65,11 @@ export const Destructible = {
 
     this._defenseValue = template.defenseValue || 0;
   },
+  listeners: {
+    onGainLevel() {
+      this.setHP(this.getMaxHP());
+    },
+  },
   getHP() {
     return this._HP;
   },
@@ -86,7 +91,7 @@ export const Destructible = {
     return this._defenseValue + modifier;
   },
   setHP(hp) {
-    this._hp = hp;
+    this._HP = hp;
   },
   increaseDefenseValue(value) {
     const increase = value || 2;
@@ -104,25 +109,9 @@ export const Destructible = {
 
     if (this._HP <= 0) {
       Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-      if (this.hasMixin('CorpseDropper')) {
-        this.tryDropCorpse();
-      }
+      this.raiseEvent('onDeath', attacker);
+      attacker.raiseEvent('onKill', this);
       this.kill();
-
-      if (attacker.hasMixin('Experience')) {
-        let exp = this.getMaxHP() + this.getDefenseValue();
-        if (this.hasMixin('Attacker')) {
-          exp += this.getAttackValue();
-        }
-        // Account for level differences
-        if (this.hasMixin('ExperienceGainer')) {
-          exp -= (attacker.getLevel() - this.getLevel()) * 3;
-        }
-        // Only give experience if more than 0.
-        if (exp > 0) {
-          attacker.giveExperience(exp);
-        }
-      }
     }
   },
 };
@@ -302,7 +291,7 @@ export const TaskActor = {
       source.getX(),
       source.getY(),
       (x, y) => {
-        if (count == 1) {
+        if (count === 1) {
           source.tryMove(x, y, z);
         }
         count++;
@@ -320,6 +309,48 @@ export const TaskActor = {
     }
   },
 };
+
+export const GiantZombieActor = Object.assign({}, TaskActor, {
+  init(template) {
+    TaskActor.init.call(this, Object.assign({}, template, {
+      tasks: ['growArm', 'spawnSlime', 'hunt', 'wander'],
+    }));
+    this._hasGrownArm = false;
+  },
+  canDoTask(task) {
+    if (task === 'growArm') {
+      return this.getHP() <= 20 && !this._hasGrownArm;
+    } else if (task === 'spawnSlime') {
+      return Math.round(Math.random() * 100) <= 10;
+    } else {
+      return TaskActor.canDoTask.call(this, task);
+    }
+  },
+  growArm() {
+    this._hasGrownArm = true;
+    this.increaseAttackValue(5);
+    Game.sendMessageNearby(this.getMap(), this.getX(), this.getY(), this.getZ(), 'An extra arm appears on the giant zombie!');
+  },
+  spawnSlime() {
+    const xOffset = Math.floor(Math.random() * 3) - 1;
+    const yOffset = Math.floor(Math.random() * 3) - 1;
+
+    if (!this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset, this.getZ())) {
+      return;
+    }
+
+    const slime = EntityRepository.create('slime');
+    slime.setX(this.getX() + xOffset);
+    slime.setY(this.getY() + yOffset);
+    slime.setZ(this.getZ());
+    this.getMap().addEntity(slime);
+  },
+  listeners: {
+    onDeath() {
+      Game.switchScreen('WinScreen');
+    },
+  },
+});
 
 export const Experience = {
   name: 'Experience',
@@ -341,6 +372,23 @@ export const Experience = {
     if (this.hasMixin('Sight')) {
       this._statOptions.push(['Increase sight range', this.increaseSightRadius]);
     }
+  },
+
+  listeners: {
+    onKill(victim) {
+      let exp = victim.getMaxHP() + victim.getDefenseValue();
+      if (this.hasMixin('Attacker')) {
+        exp += this.getAttackValue();
+      }
+      // Account for level differences
+      if (this.hasMixin('Experience')) {
+        exp -= (this.getLevel() - this.getLevel()) * 3;
+      }
+      // Only give experience if more than 0.
+      if (exp > 0) {
+        this.giveExperience(exp);
+      }
+    },
   },
   getLevel() {
     return this._level;
@@ -386,13 +434,7 @@ export const Experience = {
     // Check if we gained at least one level.
     if (levelsGained > 0) {
       Game.sendMessage(this, 'You advance to level %d.', [this._level]);
-      // Heal the entity if possible.
-      if (this.hasMixin('Destructible')) {
-        this.setHP(this.getMaxHP());
-      }
-      if (this.hasMixin('StatGainer')) {
-        this.onGainLevel();
-      }
+      this.raiseEvent('onGainLevel');
     }
   },
 };
@@ -496,18 +538,20 @@ export const CorpseDropper = {
   init(template) {
     this._corpseDropRate = template.corpseDropRate  || 100;
   },
-  tryDropCorpse() {
-    if (Math.round(Math.random() * 100) < this._corpseDropRate) {
-      this._map.addItem(
-        this.getX(),
-        this.getY(),
-        this.getZ(),
-        ItemRepository.create('corpse', {
-          name: `${this._name} corpse`,
-          fg: this._fg,
-        })
-      );
-    }
+  listeners: {
+    onDeath() {
+      if (Math.round(Math.random() * 100) < this._corpseDropRate) {
+        this._map.addItem(
+          this.getX(),
+          this.getY(),
+          this.getZ(),
+          ItemRepository.create('corpse', {
+            name: `${this._name} corpse`,
+            fg: this._fg,
+          })
+        );
+      }
+    },
   },
 };
 
@@ -549,20 +593,24 @@ export const Equipper = {
 export const RandomStatGainer = {
   name: 'RandomStatGainer',
   groupName: 'StatGainer',
-  onGainLevel() {
-    const statOptions = this.getStatOptions();
-    while (this.getStatPoints() > 0) {
-      statOptions.random()[1].call(this);
-      this.setStatPoints(this.getStatPoints() - 1);
-    }
+  listeners: {
+    onGainLevel() {
+      const statOptions = this.getStatOptions();
+      while (this.getStatPoints() > 0) {
+        statOptions.random()[1].call(this);
+        this.setStatPoints(this.getStatPoints() - 1);
+      }
+    },
   },
 };
 
 export const PlayerStatGainer = {
   name: 'PlayerStatGainer',
   groupName: 'StatGainer',
-  onGainLevel() {
-    Game.Screen.GainStatScreen.setup(this);
-    Game.Screen.PlayScreen.setSubScreen(Game.Screen.GainStatScreen);
+  listeners: {
+    onGainLevel() {
+      Game.getScreen('GainStatScreen').setup(this);
+      Game.getScreen('PlayScreen').setSubScreen(Game.getScreen('GainStatScreen'));
+    },
   },
 };
