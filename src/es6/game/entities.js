@@ -21,6 +21,7 @@ import Entity from './entity';
 import Repository from './repository';
 
 export const PlayerTemplate = {
+  name: 'human (you)',
   char: '@',
   fg: 'white',
   maxHP: 40,

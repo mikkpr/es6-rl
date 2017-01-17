@@ -16,4 +16,8 @@ export default class Glyph {
   getForeground() {
     return this._fg;
   }
+
+  getRepresentation() {
+    return `%c{${this._fg}}%b{${this._bg}}${this._char}%c{white}%b{black}`;
+  }
 }

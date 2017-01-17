@@ -4,6 +4,8 @@ import { Player } from './entities';
 import Game from './index';
 import { vsprintf } from 'sprintf-js';
 import Builder from './builder';
+import { getLine } from './geometry';
+import { NullTile } from './tile';
 
 export const StartScreen = {
   enter: () => {},
@@ -88,7 +90,7 @@ class ItemListScreen {
         this.executeOKFunction();
       } else if (this._canSelectItem && this._hasNoItemOption && event.keyCode === ROT.VK_0) {
         this._selectedIndices = {};
-        this.executeOkFunction();
+        this.executeOKFunction();
       } else if (this._canSelectItem && event.keyCode >= ROT.VK_A && event.keyCode <= ROT.VK_Z) {
         const index = event.keyCode - ROT.VK_A;
         if (this._items[index]) {
@@ -214,6 +216,171 @@ export const WearScreen = new ItemListScreen({
   },
 });
 
+export const ExamineScreen = new ItemListScreen({
+  caption: 'Choose the item you wish to examine',
+  canSelect: true,
+  canSelectMultipleItems: false,
+  isAcceptable() {
+    return true;
+  },
+  ok(selectedItems) {
+    const keys = Object.keys(selectedItems);
+    if (keys.length > 0) {
+      const item = selectedItems[keys[0]];
+      Game.sendMessage(this._player, "It's %s (%s).", [
+        item.describeA(false),
+        item.details(),
+      ]);
+    }
+    return true;
+  },
+});
+
+class TargetBasedScreen {
+  constructor(template = {}) {
+    this._isAcceptableFunction = template.okFunction || (() => false);
+    this._captionFunction = template.captionFunction || (() => '');
+  }
+
+  setup(player, startX, startY, offsetX, offsetY) {
+    this._player = player;
+    // store original position and subtract offset
+    this._startX = startX - offsetX;
+    this._startY = startY - offsetY;
+
+    // store current cursor position
+    this._cursorX = this._startX;
+    this._cursorY = this._startY;
+
+    // store map offsets
+    this._offsetX = offsetX;
+    this._offsetY = offsetY;
+
+    // cache the FOV
+    const visibleCells = {};
+    this._player.getMap().getFOV(this._player.getZ()).compute(
+      this._player.getX(),
+      this._player.getY(),
+      this._player.getSightRadius(),
+      (x, y) => {
+        visibleCells[`${x},${y}`] = true;
+      }
+    );
+    this._visibleCells = visibleCells;
+  }
+
+  render(display) {
+    Game.getScreen('PlayScreen').renderTiles.call(Game.getScreen('PlayScreen'), display);
+
+    const points = getLine(this._startX, this._startY, this._cursorX, this._cursorY);
+    points.forEach(p => display.drawText(p.x, p.y, '%c{magenta}*'));
+
+    display.drawText(0, Game.getScreenHeight() - 1, this._captionFunction(this._cursorX + this._offsetX, this._cursorY + this._offsetY));
+  }
+
+  handleInput(type, event) {
+    if (type === 'keydown') {
+      if (event.keyCode === ROT.VK_LEFT) {
+        this.moveCursor(-1, 0);
+      } else if (event.keyCode === ROT.VK_RIGHT) {
+        this.moveCursor(1, 0);
+      } else if (event.keyCode === ROT.VK_UP) {
+        this.moveCursor(0, -1);
+      } else if (event.keyCode === ROT.VK_DOWN) {
+        this.moveCursor(0, 1);
+      } else if (event.keyCode === ROT.VK_ESCAPE) {
+        Game.getScreen('PlayScreen').setSubScreen(undefined);
+      } else if (event.keyCode === ROT.VK_RETURN) {
+        this.executeOKFunction();
+      }
+    }
+    Game.refresh();
+  }
+
+  moveCursor(dx, dy) {
+    this._cursorX = Math.max(0, Math.min(this._cursorX + dx, Game.getScreenWidth()));
+    this._cursorY = Math.max(0, Math.min(this._cursorY + dy, Game.getScreenHeight()));
+  }
+
+  executeOKFunction() {
+    Game.getScreen('PlayScreen').setSubScreen(undefined);
+    if (this._okFunction(this._cursorX + this._offsetX, this._cursorY + this._offsetY)) {
+      this._player.getMap().getEngine().unlock();
+    }
+  }
+}
+
+export const LookScreen = new TargetBasedScreen({
+  captionFunction(x, y) {
+    const z = this._player.getZ();
+    const map = this._player.getMap();
+
+    if (map.getExplored(x, y, z)) {
+      if (this._visibleCells[`${x},${y}`]) {
+        const items = map.getItemsAt(x, y, z);
+
+        if (items) {
+          const item = items[items.length - 1];
+          return String.format(
+            '%s - %s (%s)',
+            item.getRepresentation(),
+            item.describeA(true),
+            item.details()
+          );
+        } else if (map.getEntityAt(x, y, z)) {
+          const entity = map.getEntityAt(x, y, z);
+          return String.format(
+            '%s - %s (%s)',
+            entity.getRepresentation(),
+            entity.describeA(true),
+            entity.details()
+          );
+        }
+      }
+
+      return String.format(
+        '%s - %s',
+        map.getTile(x, y, z).getRepresentation(),
+        map.getTile(x, y, z).getDescription()
+      );
+    } else {
+      return String.format(
+        '%s - %s',
+        NullTile.getRepresentation(),
+        NullTile.getDescription()
+      );
+    }
+  },
+});
+
+export const HelpScreen = {
+  render(display) {
+    const text = 'help';
+    const border = '---------------';
+    let y = 0;
+    display.drawText(Game.getScreenWidth() / 2 - text.length / 2, y++, text);
+    display.drawText(Game.getScreenWidth() / 2 - text.length / 2, y++, border);
+    display.drawText(0, y++, 'The villagers have been complaining of a terrible stench coming from the cave.');
+    display.drawText(0, y++, 'Find the source of this smell and get rid of it!');
+    y += 3;
+    display.drawText(0, y++, '[,] to pick up items');
+    display.drawText(0, y++, '[d] to drop items');
+    display.drawText(0, y++, '[e] to eat items');
+    display.drawText(0, y++, '[w] to wield items');
+    display.drawText(0, y++, '[W] to wield items');
+    display.drawText(0, y++, '[x] to examine items');
+    display.drawText(0, y++, '[;] to look around you');
+    display.drawText(0, y++, '[?] to show this help screen');
+    y += 3;
+    const anyText = '--- press any key to continue ---';
+    display.drawText(Game.getScreenWidth() / 2 - text.length / 2, y++, anyText);
+  },
+
+  handleInput() {
+    Game.getScreen('PlayScreen').setSubScreen(null);
+  },
+};
+
 export const GainStatScreen = {
   setup(entity) {
     this._entity = entity;
@@ -293,8 +460,53 @@ export const PlayScreen = {
     const screenWidth = Game.getScreenWidth();
     const screenHeight = Game.getScreenHeight();
 
-    const topLeftX = Math.min(Math.max(0, this._player.getX() - (screenWidth / 2)), this._player.getMap().getWidth() - screenWidth);
-    const topLeftY = Math.min(Math.max(0, this._player.getY() - (screenHeight / 2)), this._player.getMap().getHeight() - screenHeight);
+    this.renderTiles(display);
+
+    // draw messages
+    const messages = this._player.getMessages();
+    let messageY = 0;
+    messages.forEach(message => {
+      messageY += display.drawText(
+        0,
+        messageY,
+        `%c{white}%b{black}${message}`
+      );
+    });
+
+    // draw player stats
+    const stats = vsprintf('HP:%d/%d ATK:%d DEF:%d', [
+      this._player.getHP(),
+      this._player.getMaxHP(),
+      this._player.getAttackValue(),
+      this._player.getDefenseValue(),
+    ]);
+    const stats2 = vsprintf('L:%d EXP:%d', [
+      this._player.getLevel(),
+      this._player.getExperience(),
+    ]);
+    display.drawText(0, screenHeight, `%c{white}%b{black}${stats}`);
+    display.drawText(screenWidth - stats2.length, screenHeight, `%c{white}%b{black}${stats2}`);
+
+    // draw hunger state
+    const hungerState = this._player.getHungerState();
+    display.drawText(screenWidth - hungerState.length, screenHeight - 1, hungerState);
+  },
+
+  getScreenOffsets() {
+    const topLeftX = Math.min(Math.max(0, this._player.getX() - (Game.getScreenWidth() / 2)), this._player.getMap().getWidth() - Game.getScreenWidth());
+    const topLeftY = Math.min(Math.max(0, this._player.getY() - (Game.getScreenHeight() / 2)), this._player.getMap().getHeight() - Game.getScreenHeight());
+
+    return {
+      x: topLeftX,
+      y: topLeftY,
+    };
+  },
+
+  renderTiles(display) {
+    const screenWidth = Game.getScreenWidth();
+    const screenHeight = Game.getScreenHeight();
+    const offsets = this.getScreenOffsets();
+    const { x: topLeftX, y: topLeftY } = offsets;
 
     // calculate FOV and set explored tiles
     const visibleCells = {};
@@ -347,38 +559,11 @@ export const PlayScreen = {
         }
       }
     }
-
-    // draw messages
-    const messages = this._player.getMessages();
-    let messageY = 0;
-    messages.forEach(message => {
-      messageY += display.drawText(
-        0,
-        messageY,
-        `%c{white}%b{black}${message}`
-      );
-    });
-
-    // draw player stats
-    const stats = vsprintf('HP:%d/%d ATK:%d DEF:%d', [
-      this._player.getHP(),
-      this._player.getMaxHP(),
-      this._player.getAttackValue(),
-      this._player.getDefenseValue(),
-    ]);
-    const stats2 = vsprintf('L:%d EXP:%d', [
-      this._player.getLevel(),
-      this._player.getExperience(),
-    ]);
-    display.drawText(0, screenHeight, `%c{white}%b{black}${stats}`);
-    display.drawText(screenWidth - stats2.length, screenHeight, `%c{white}%b{black}${stats2}`);
-
-    // draw hunger state
-    const hungerState = this._player.getHungerState();
-    display.drawText(screenWidth - hungerState.length, screenHeight - 1, hungerState);
   },
 
   handleInput(type, event) {
+    const offsets = this.getScreenOffsets();
+
     if (this._gameEnded) {
       if (type === 'keydown' && event.keyCode === ROT.VK_RETURN) {
         Game.switchScreen('LoseScreen');
@@ -439,6 +624,9 @@ export const PlayScreen = {
           );
         }
         return;
+      } else if (event.keyCode === ROT.VK_X) {
+        this.showItemsSubScreen(Game.getScreen('ExamineScreen'), this._player.getItems(), 'You have nothing to examine.');
+        return;
       } else if (event.keyCode === ROT.VK_COMMA) {
         const items = this._player.getMap().getItemsAt(this._player.getX(), this._player.getY(), this._player.getZ());
         // If there is only one item, directly pick it up
@@ -466,6 +654,21 @@ export const PlayScreen = {
         this.move(0, 0, 1);
       } else if (keyChar === '<') {
         this.move(0, 0, -1);
+      } else if (keyChar === ';') {
+        // Setup the look screen.
+        Game.getScreen('LookScreen').setup(
+          this._player,
+          this._player.getX(),
+          this._player.getY(),
+          offsets.x,
+          offsets.y
+        );
+        this.setSubScreen(Game.getScreen('LookScreen'));
+        return;
+      } else if (keyChar === '?') {
+        // Setup the look screen.
+        this.setSubScreen(Game.getScreen('HelpScreen'));
+        return;
       } else {
         return;
       }

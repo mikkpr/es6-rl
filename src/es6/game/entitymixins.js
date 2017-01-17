@@ -69,6 +69,12 @@ export const Destructible = {
     onGainLevel() {
       this.setHP(this.getMaxHP());
     },
+    details() {
+      return [
+        { key: 'defense', value: this.getDefenseValue() },
+        { key: 'hp', value: this.getHP() },
+      ];
+    },
   },
   getHP() {
     return this._HP;
@@ -161,6 +167,13 @@ export const Attacker = {
 
       target.takeDamage(this, damage);
     }
+  },
+  listeners: {
+    details() {
+      return [{
+        key: 'attack', value: this.getAttackValue(),
+      }];
+    },
   },
 };
 
@@ -388,6 +401,11 @@ export const Experience = {
       if (exp > 0) {
         this.giveExperience(exp);
       }
+    },
+    details() {
+      return [{
+        key: 'level', value: this.getLevel(),
+      }];
     },
   },
   getLevel() {

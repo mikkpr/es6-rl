@@ -26,6 +26,16 @@ export const Edible = {
       return this._name;
     }
   },
+  listeners: {
+    details() {
+      return [
+        {
+          key: 'food',
+          value: this._foodValue,
+        },
+      ];
+    },
+  },
 };
 
 export const Equippable = {
@@ -47,5 +57,21 @@ export const Equippable = {
   },
   isWearable() {
     return this._wearable;
+  },
+  listeners: {
+    details() {
+      const results = [];
+      if (this._wieldable) {
+        results.push({
+          key: 'attack', value: this.getAttackValue(),
+        });
+      }
+      if (this._wearable) {
+        results.push({
+          key: 'defense', value: this.getDefenseValue(),
+        });
+      }
+      return results;
+    },
   },
 };

@@ -49,12 +49,30 @@ export default class DynamicGlyph extends Glyph {
 
   raiseEvent(event, ...args) {
     if (!this._listeners[event]) {
-      return;
+      return [];
     }
 
+    const results = [];
     this._listeners[event].forEach(callback => {
-      callback.apply(this, args);
+      results.push(callback.apply(this, args));
     });
+    return results;
+  }
+
+  details() {
+    const details = [];
+    const detailGroups = this.raiseEvent('details');
+    // Iterate through each return value, grabbing the details from the arrays.
+    if (detailGroups) {
+      for (let i = 0; i < detailGroups.length; i++) {
+        if (detailGroups[i]) {
+          for (let j = 0; j < detailGroups[i].length; j++) {
+            details.push(`${detailGroups[i][j].key}: ${detailGroups[i][j].value}`);
+          }
+        }
+      }
+    }
+    return details.join(', ');
   }
 
   hasMixin(obj) {

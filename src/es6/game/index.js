@@ -1,6 +1,6 @@
 import ROT from 'rot-js';
 import { vsprintf } from 'sprintf-js';
-import { PlayScreen, StartScreen, WinScreen, LoseScreen, GainStatScreen } from './screen';
+import { PlayScreen, StartScreen, WinScreen, LoseScreen, GainStatScreen, LookScreen, HelpScreen } from './screen';
 
 import { MessageRecipient } from './entitymixins';
 
@@ -35,6 +35,8 @@ export const Game = {
       WinScreen,
       LoseScreen,
       GainStatScreen,
+      LookScreen,
+      HelpScreen,
     };
     return this;
   },

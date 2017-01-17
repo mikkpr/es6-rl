@@ -7,6 +7,7 @@ export default class Tile extends Glyph {
     this._walkable = properties.walkable || false;
     this._diggable = properties.diggable || false;
     this._blocksLight = (typeof properties.blocksLight !== 'undefined') ? properties.blocksLight : false;
+    this._description = properties.description || '';
   }
 
   isWalkable() {
@@ -20,14 +21,21 @@ export default class Tile extends Glyph {
   isBlockingLight() {
     return this._blocksLight;
   }
+
+  getDescription() {
+    return this._description;
+  }
 }
 
-export const NullTile = new Tile({});
+export const NullTile = new Tile({
+  description: '(unknown)',
+});
 
 export const FloorTile = new Tile({
   char: '.',
   walkable: true,
   blocksLight: false,
+  description: 'A cave floor',
 });
 
 export const WallTile = new Tile({
@@ -35,6 +43,7 @@ export const WallTile = new Tile({
   fg: 'goldenrod',
   diggable: true,
   blocksLight: true,
+  description: 'A cave wall',
 });
 
 export const StairsUpTile = new Tile({
@@ -42,6 +51,7 @@ export const StairsUpTile = new Tile({
   fg: 'white',
   walkable: true,
   blocksLight: false,
+  description: 'A rock staircase leading upwards',
 });
 
 export const StairsDownTile = new Tile({
@@ -49,6 +59,7 @@ export const StairsDownTile = new Tile({
   fg: 'white',
   walkable: true,
   blocksLight: false,
+  description: 'A rock staircase leading downwards',
 });
 
 export const HoleToCavernTile = new Tile({
@@ -56,6 +67,7 @@ export const HoleToCavernTile = new Tile({
   fg: 'white',
   walkable: true,
   blocksLight: false,
+  description: 'A great dark hole in the ground',
 });
 
 export const WaterTile = new Tile({
@@ -63,4 +75,5 @@ export const WaterTile = new Tile({
   fg: 'blue',
   walkable: false,
   blocksLight: false,
+  description: 'Murky blue water',
 });
