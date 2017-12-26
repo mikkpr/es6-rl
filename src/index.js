@@ -8,9 +8,9 @@ function setup() {
   const displaySettings = {
     width: 21,
     height: 21,
-    fontSize: 14,
-    fontFamily: 'monospace',
-    spacing: 1,
+    fontSize: 16,
+    fontFamily: 'Fira Mono',
+    spacing: 0.9,
     layout: 'rect',
     fg: 'white',
     forceSquareRatio: true
