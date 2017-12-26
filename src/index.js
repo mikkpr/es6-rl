@@ -22,6 +22,23 @@ function setup() {
   return display;
 }
 
+let messages = [];
+
+function clearMessages() {
+  messages = [];
+  player.clearMessages();
+}
+
+function drawMessages() {
+  const messageContainer = document.getElementById("messages");
+  messageContainer.innerHTML = '';
+  messages.forEach(msg => {
+    const el = document.createElement('div');
+    el.innerHTML = msg;
+    messageContainer.appendChild(el);
+  })
+}
+
 const display = setup();
 const player = new Player({ x: 1, y: 1 });
 const map = new Map({ width: 21, height: 21 });
@@ -29,9 +46,19 @@ const movement = new Movement({player, map});
 const fov = new FOV({player, map});
 
 window.Game = {
-  display, player, map, movement, fov
+  display, player, map, movement, fov, messages
 };
 
+
+function setMessages() {
+  const tile = map.getTile(player.x, player.y);
+  if (tile.contents.length > 0) {
+    messages.push('You see ' + tile.contents[tile.contents.length - 1].name);
+  }
+  if (player.messages.length > 0) {
+    messages = messages.concat(player.messages);
+  }
+};
 function handleInput(constant) {
   switch (constant) {
     case ROT.VK_LEFT:
@@ -46,6 +73,9 @@ function handleInput(constant) {
     case ROT.VK_UP:
       movement.movePlayerBy(0, -1);
       break;
+    case ROT.VK_G:
+      player.pickupItem(map.getTile(player.x, player.y), messages);
+      break;
     default:
       break;
   }
@@ -56,6 +86,9 @@ function update(display) {
   display.clear();
   map.drawExploredMap(display);
   fov.draw(display);
+  setMessages();
+  drawMessages();
+  clearMessages();
 }
 
 document.addEventListener("keyup", function (e) {

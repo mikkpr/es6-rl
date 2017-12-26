@@ -20,9 +20,25 @@ export default class FOV {
         const tile = this.map.getTile(x, y);
         tile.visible = true;
         tile.explored = true;
-        display.draw(tile.x, tile.y, tile.tile.char, '#FFF') 
+        display.draw(tile.x, tile.y, getChar(tile), getColor(tile)) 
       }
     })
     display.draw(this.player.x, this.player.y, this.player.char);
+  }
+}
+
+function getChar(tile) {
+  if (tile.contents.length > 0) {
+    return tile.contents[tile.contents.length - 1].char;
+  } else {
+    return tile.tile.char;
+  }
+}
+
+function getColor(tile) {
+  if (tile.contents.length > 0) {
+    return tile.contents[tile.contents.length - 1].fg;
+  } else {
+    return tile.tile.fg;
   }
 }

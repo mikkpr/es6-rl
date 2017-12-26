@@ -1,5 +1,5 @@
 import ROT from 'rot-js';
-
+import Item from './item';
 class Tile {
   constructor({ fg, bg, char, solid }) {
     this.fg = fg;
@@ -19,6 +19,7 @@ export default class Map {
     this.width = width;
     this.height = height;
     this.tiles = this.buildMap();
+    this.spawnItems();
   }
 
   buildMap() {
@@ -38,15 +39,27 @@ export default class Map {
 
     for (let x = 0; x < this.width; x++) {
       tiles[`${x},0`].tile = TILES.wall;
-      tiles[`${x},10`].tile = TILES.wall;
       tiles[`${x},${this.height - 1}`].tile = TILES.wall;
     }
     for (let y = 0; y < this.height; y++) {
-      tiles[`10,${y}`].tile = TILES.floor;
       tiles[`0,${y}`].tile = TILES.wall;
       tiles[`${this.width - 1},${y}`].tile = TILES.wall;
     }
     return tiles;
+  }
+  
+  spawnItems() {
+    const randX = Math.max(1, Math.floor(ROT.RNG.getUniform() * this.width - 1));
+    const randY = Math.max(1, Math.floor(ROT.RNG.getUniform() * this.height - 1));
+    console.log(randX, randY);
+    
+    this.getTile(randX, randY).contents.push(new Item({
+      id: 'TORCH',
+      name: 'a torch',
+      description: 'a torch is here, slowly burning',
+      char: '(',
+      fg: 'yellow'
+    }))
   }
   
   getTile(x, y) {
