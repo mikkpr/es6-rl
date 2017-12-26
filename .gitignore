@@ -1,0 +1,4 @@
+.vscode<M-C-S-F3>
+node_modules
+.cache
+dist

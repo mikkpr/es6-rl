@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "babel-preset-env": "^1.6.1",
+    "eslint-config-prettier": "^2.9.0",
+    "parcel-bundler": "^1.3.1"
+  },
+  "scripts": {
+    "start": "parcel index.html"
+  },
+  "dependencies": {
+    "rot-js": "^0.6.5"
+  }
+}
