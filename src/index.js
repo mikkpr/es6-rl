@@ -8,6 +8,7 @@ import ECS from '@fae/ecs';
 
 import RenderSystem from './systems/render';
 
+import Item from './entities/item';
 import Player2 from './entities/player';
 
 const ecs = new ECS();
@@ -30,7 +31,7 @@ function setup() {
   return display;
 }
 
-let messages = [];
+/* let messages = [];
 
 function clearMessages() {
   messages = [];
@@ -45,28 +46,29 @@ function drawMessages() {
     el.innerHTML = msg;
     messageContainer.appendChild(el);
   });
-}
+} */
 
 const display = setup();
-const player = new Player({x: 1, y: 1});
-const map = new Map({width: 21, height: 21});
+/* const player = new Player({x: 1, y: 1}); */
+/* const map = new Map({width: 21, height: 21});
 const movement = new Movement({player, map});
-const fov = new FOV({player, map});
+const fov = new FOV({player, map}); */
 
 ecs.addSystem(new RenderSystem(display));
 ecs.addEntity(new Player2(10, 10));
+/* ecs.addEntity(new Item('a torch', '(', 'yellow', 'black')); */
 
 window.Game = {
   display,
-  player,
+  /* player,
   map,
   movement,
   fov,
-  messages,
+  messages, */
   ecs
 };
 
-function setMessages() {
+/* function setMessages() {
   const tile = map.getTile(player.x, player.y);
   if (tile.contents.length > 0) {
     messages.push('You see ' + tile.contents[tile.contents.length - 1].name);
@@ -96,21 +98,23 @@ function handleInput(constant) {
       break;
   }
   update(display);
-}
+} */
 
-function update(display) {
+function update() {
   display.clear();
-  map.drawExploredMap(display);
-  fov.draw(display);
+/*   map.drawExploredMap(display);
+  fov.draw(display); */
   
   ecs.update();
   
-  setMessages();
+/*   setMessages();
   drawMessages();
-  clearMessages();
+  clearMessages(); */
+  
+  requestAnimationFrame(update);
 }
 
-document.addEventListener('keyup', function(e) {
+/* document.addEventListener('keyup', function(e) {
   var code = e.keyCode;
 
   let vk = '?';
@@ -121,6 +125,6 @@ document.addEventListener('keyup', function(e) {
   }
 
   handleInput(code);
-});
+}); */
 
 update(display);
