@@ -7,6 +7,7 @@ import Movement from './movement';
 import ECS from '@fae/ecs';
 
 import RenderSystem from './systems/render';
+import InputSystem from './systems/input';
 
 import Item from './entities/item';
 import Player2 from './entities/player';
@@ -55,6 +56,7 @@ const movement = new Movement({player, map});
 const fov = new FOV({player, map}); */
 
 ecs.addSystem(new RenderSystem(display));
+ecs.addSystem(new InputSystem());
 ecs.addEntity(new Player2(10, 10));
 /* ecs.addEntity(new Item('a torch', '(', 'yellow', 'black')); */
 
@@ -77,28 +79,7 @@ window.Game = {
     messages = messages.concat(player.messages);
   }
 }
-function handleInput(constant) {
-  switch (constant) {
-    case ROT.VK_LEFT:
-      movement.movePlayerBy(-1, 0);
-      break;
-    case ROT.VK_RIGHT:
-      movement.movePlayerBy(1, 0);
-      break;
-    case ROT.VK_DOWN:
-      movement.movePlayerBy(0, 1);
-      break;
-    case ROT.VK_UP:
-      movement.movePlayerBy(0, -1);
-      break;
-    case ROT.VK_G:
-      player.pickupItem(map.getTile(player.x, player.y), messages);
-      break;
-    default:
-      break;
-  }
-  update(display);
-} */
+*/
 
 function update() {
   display.clear();
@@ -114,17 +95,4 @@ function update() {
   requestAnimationFrame(update);
 }
 
-/* document.addEventListener('keyup', function(e) {
-  var code = e.keyCode;
-
-  let vk = '?';
-  for (let name in ROT) {
-    if (ROT[name] == code && name.indexOf('VK_') == 0) {
-      vk = name;
-    }
-  }
-
-  handleInput(code);
-}); */
-
-update(display);
+update();
