@@ -4,6 +4,14 @@ import Map from './map';
 import FOV from './fov';
 import Movement from './movement';
 
+import ECS from '@fae/ecs';
+
+import RenderSystem from './systems/render';
+
+import Player2 from './entities/player';
+
+const ecs = new ECS();
+
 function setup() {
   const displaySettings = {
     width: 21,
@@ -15,7 +23,7 @@ function setup() {
     fg: 'white',
     forceSquareRatio: true
   };
-  const container = document.getElementById("main");
+  const container = document.getElementById('main');
   container.innerHTML = '';
   const display = new ROT.Display(displaySettings);
   container.appendChild(display.getContainer());
@@ -30,25 +38,33 @@ function clearMessages() {
 }
 
 function drawMessages() {
-  const messageContainer = document.getElementById("messages");
+  const messageContainer = document.getElementById('messages');
   messageContainer.innerHTML = '';
   messages.forEach(msg => {
     const el = document.createElement('div');
     el.innerHTML = msg;
     messageContainer.appendChild(el);
-  })
+  });
 }
 
 const display = setup();
-const player = new Player({ x: 1, y: 1 });
-const map = new Map({ width: 21, height: 21 });
+const player = new Player({x: 1, y: 1});
+const map = new Map({width: 21, height: 21});
 const movement = new Movement({player, map});
 const fov = new FOV({player, map});
 
-window.Game = {
-  display, player, map, movement, fov, messages
-};
+ecs.addSystem(new RenderSystem(display));
+ecs.addEntity(new Player2(10, 10));
 
+window.Game = {
+  display,
+  player,
+  map,
+  movement,
+  fov,
+  messages,
+  ecs
+};
 
 function setMessages() {
   const tile = map.getTile(player.x, player.y);
@@ -58,7 +74,7 @@ function setMessages() {
   if (player.messages.length > 0) {
     messages = messages.concat(player.messages);
   }
-};
+}
 function handleInput(constant) {
   switch (constant) {
     case ROT.VK_LEFT:
@@ -79,27 +95,31 @@ function handleInput(constant) {
     default:
       break;
   }
-  update(display)
+  update(display);
 }
 
 function update(display) {
   display.clear();
   map.drawExploredMap(display);
   fov.draw(display);
+  
+  ecs.update();
+  
   setMessages();
   drawMessages();
   clearMessages();
 }
 
-document.addEventListener("keyup", function (e) {
+document.addEventListener('keyup', function(e) {
   var code = e.keyCode;
-  
 
-  let vk = "?";
+  let vk = '?';
   for (let name in ROT) {
-    if (ROT[name] == code && name.indexOf("VK_") == 0) { vk = name; }
+    if (ROT[name] == code && name.indexOf('VK_') == 0) {
+      vk = name;
+    }
   }
-  
+
   handleInput(code);
 });
 
