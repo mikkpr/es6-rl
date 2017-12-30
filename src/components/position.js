@@ -5,6 +5,7 @@ const PositionComponent = Base =>
 
       this._x = 0;
       this._y = 0;
+      this._z = 0;
     }
 
     get x() {
@@ -19,6 +20,13 @@ const PositionComponent = Base =>
     }
     set y(v) {
       this._y = Math.floor(v);
+    }
+    
+    get z() {
+      return this._z;
+    }
+    set z(v) {
+      this._z = Math.floor(v);
     }
   };
   
