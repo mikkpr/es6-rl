@@ -3,15 +3,39 @@ import ROT from 'rot-js';
 
 const createMap = (width, height) => {
   const tiles = [];
-  for (let idx = 0; idx < width * height; idx++) {
+  const map = (
+    '#####################' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#...................#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#####.#########.#####' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#...................#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#.........#.........#' +
+    '#####################'
+  ).split('');
+
+  map.forEach((char, idx) => {
     const x = idx % width;
     const y = Math.floor((idx - x) / width);
-    const isWall = (x == 0 || y == 0 || x == width - 1 || y == height - 1);
+    const isWall = char === '#';
     const tileType = isWall ? WallTile : FloorTile;
     tiles.push(new tileType({x, y}));
-  }
+  });
   return tiles;
-}
+};
 
 const setupDisplay = (width, height) => {
   const displaySettings = {
@@ -29,9 +53,6 @@ const setupDisplay = (width, height) => {
   const display = new ROT.Display(displaySettings);
   container.appendChild(display.getContainer());
   return display;
-}
+};
 
-export {
-  createMap,
-  setupDisplay
-}
+export {createMap, setupDisplay};

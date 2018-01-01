@@ -24,7 +24,7 @@ const map = createMap(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 map.forEach(tile => ecs.addEntity(tile));
 
 // create player
-const player = new Player(10, 10);
+const player = new Player(5, 5);
 ecs.addEntity(player);
 
 // initialize systems
