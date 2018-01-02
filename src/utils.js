@@ -55,4 +55,6 @@ const setupDisplay = (width, height) => {
   return display;
 };
 
-export {createMap, setupDisplay};
+const posKey = (x, y) => `${x},${y}`;
+
+export {createMap, setupDisplay, posKey};

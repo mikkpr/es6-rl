@@ -4,6 +4,7 @@ import ECS from '@fae/ecs';
 
 import RenderSystem from './systems/render';
 import MovementSystem from './systems/movement';
+import LightSystem from './systems/light';
 
 import Player from './entities/player';
 
@@ -14,13 +15,14 @@ const DISPLAY_WIDTH = 21;
 const DISPLAY_HEIGHT = 21;
 
 // initialize our ECS system
-const ecs = new ECS();
+const ecs = new ECS({systemsFirst: true});
 
 // create display
 const display = setupDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
 // create initial map
 const map = createMap(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+map[310]._lightsourceActive = true;
 map.forEach(tile => ecs.addEntity(tile));
 
 // create player
@@ -32,6 +34,7 @@ const renderer = new RenderSystem(display);
 ecs.addSystem(renderer);
 
 ecs.addSystem(new MovementSystem(renderer));
+ecs.addSystem(new LightSystem(renderer));
 
 window.Game = {
   display,
@@ -46,7 +49,10 @@ function update() {
 
   renderer.clear();
 
-  ecs.update();
+  ecs.update(); // first pass to get all cell data,
+  ecs.update(); // second pass to calculate lighting
+  console.log(renderer.light);
+  renderer.light = {};
 };
 
 document.addEventListener('keyup', e => {

@@ -9,7 +9,7 @@
     "start": "parcel index.html"
   },
   "dependencies": {
-    "@fae/ecs": "^1.0.2",
+    "@fae/ecs": "mikkpr/ecs",
     "parcel": "^0.0.1",
     "rot-js": "^0.6.5"
   }

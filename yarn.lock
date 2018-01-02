@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@fae/ecs@^1.0.2":
+"@fae/ecs@mikkpr/ecs":
   version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@fae/ecs/-/ecs-1.0.2.tgz#d4749727fb97ca75c441378313064c6bcae3d905"
+  resolved "https://codeload.github.com/mikkpr/ecs/tar.gz/14efb13525d3c7bf4ae11532943c5c5b8af27271"
   dependencies:
     core-js "^2.4.1"
 
