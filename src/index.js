@@ -22,7 +22,7 @@ const display = setupDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
 // create initial map
 const map = createMap(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-map[310]._lightsourceActive = true;
+map[330]._lightsourceActive = true;
 map.forEach(tile => ecs.addEntity(tile));
 
 // create player
@@ -31,10 +31,11 @@ ecs.addEntity(player);
 
 // initialize systems
 const renderer = new RenderSystem(display);
-ecs.addSystem(renderer);
 
 ecs.addSystem(new MovementSystem(renderer));
 ecs.addSystem(new LightSystem(renderer));
+
+ecs.addSystem(renderer);
 
 window.Game = {
   display,
@@ -51,7 +52,7 @@ function update() {
 
   ecs.update(); // first pass to get all cell data,
   ecs.update(); // second pass to calculate lighting
-  console.log(renderer.light);
+
   renderer.light = {};
 };
 

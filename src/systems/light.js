@@ -26,7 +26,9 @@ class LightSystem extends ECS.System {
     const fov = new ROT.FOV.RecursiveShadowcasting(this.lightPasses.bind(this));
 
     fov.compute(ex, ey, er, (x, y, r, visibility) => {
-      this.renderer.light[posKey(x, y)] = visibility ? +(1 - r / er * visibility).toFixed(2) : 0;
+      const prevLight = this.renderer.light[posKey(x, y)] || 0;
+      const newLight = visibility ? +(1 - r / er * visibility).toFixed(2) : 0;
+      this.renderer.light[posKey(x, y)] = Math.max(newLight, prevLight, prevLight + (1 - prevLight) * newLight);
     });
   }
 
