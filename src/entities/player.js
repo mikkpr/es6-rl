@@ -1,4 +1,4 @@
-import ECS from '@fae/ecs';
+import ECS from 'mikkpr-ecs';
 
 import PositionComponent from '../components/position';
 import GlyphComponent from '../components/glyph';
@@ -7,7 +7,7 @@ import CollisionComponent from '../components/collision';
 import MovementComponent from '../components/movement';
 import LightComponent from '../components/light';
 
-class Player extends ECS.Entity.with(PositionComponent, GlyphComponent, MovementComponent, CollisionComponent, PlayerInputComponent, LightComponent) {
+class Player extends ECS.Entity.with(PositionComponent, GlyphComponent, CollisionComponent, PlayerInputComponent, MovementComponent, LightComponent) {
   constructor(x, y) {
     super();
 
@@ -18,10 +18,10 @@ class Player extends ECS.Entity.with(PositionComponent, GlyphComponent, Movement
     this.char = '@';
     this.fg = [255, 255, 255];
     this.bg = 'black';
-    
+
     this.lightRadius = 8;
     this.enableLight = true;
-    
+
     this.collides = true;
   }
 }

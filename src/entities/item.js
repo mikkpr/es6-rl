@@ -1,4 +1,4 @@
-import ECS from '@fae/ecs';
+import ECS from 'mikkpr-ecs';
 
 import GlyphComponent from '../components/glyph';
 import DescriptionComponent from '../components/description';

@@ -1,4 +1,4 @@
-import ECS from '@fae/ecs';
+import ECS from 'mikkpr-ecs';
 
 import PositionComponent from '../components/position';
 import CollisionComponent from '../components/collision';
@@ -35,7 +35,7 @@ class MovementSystem extends ECS.System {
     entity.validDestinations['DIR_UP'] = this.checkDir('DIR_UP', x, y);
     entity.validDestinations['DIR_DOWN'] = this.checkDir('DIR_DOWN', x, y);
   }
-  
+
   checkDir(direction, x, y) {
     const dirToCell = {
       DIR_LEFT: `${x - 1},${y}`,
@@ -44,7 +44,7 @@ class MovementSystem extends ECS.System {
       DIR_DOWN: `${x},${y + 1}`
     }
     const cell = this.renderer.cells[dirToCell[direction]];
-    
+
     return !(
       !cell ||
       (cell.entity.hasComponent(CollisionComponent) && cell.entity.collides)

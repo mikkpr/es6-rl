@@ -1,4 +1,4 @@
-import ECS from '@fae/ecs';
+import ECS from 'mikkpr-ecs';
 
 import PositionComponent from '../components/position';
 import GlyphComponent from '../components/glyph';
@@ -18,9 +18,9 @@ class Tile extends ECS.Entity.with(PositionComponent, GlyphComponent, InventoryC
     this.char = char;
     this.fg = fg;
     this.bg = bg;
-    
+
     this.enableLight = false;
-    
+
     this.walkable = walkable;
   }
 }
@@ -39,7 +39,6 @@ class WallTile extends Tile.with(CollisionComponent) {
   }
 }
 
-export default Tile;
 export {
   FloorTile,
   WallTile

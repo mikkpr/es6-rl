@@ -1,12 +1,14 @@
 import ROT from 'rot-js';
 
-import ECS from '@fae/ecs';
+import ECS from 'mikkpr-ecs';
 
 import RenderSystem from './systems/render';
+import PositionSystem from './systems/position';
 import MovementSystem from './systems/movement';
 import LightSystem from './systems/light';
 
 import Player from './entities/player';
+import {Lamp} from './entities/furniture';
 
 import {createMap, setupDisplay} from './utils';
 
@@ -22,7 +24,9 @@ const display = setupDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
 // create initial map
 const map = createMap(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-map[330]._lightsourceActive = true;
+const light = new Lamp({position: {x: 15, y: 15, z: 1}, glyph: {char: 'O', fg: [128, 128, 0], bg: [0, 0, 0]}, light: {active: true, color: [255, 255, 0], radius: 7}});
+ecs.addEntity(light);
+map[330].addItem(light.id);
 map.forEach(tile => ecs.addEntity(tile));
 
 // create player
@@ -32,6 +36,7 @@ ecs.addEntity(player);
 // initialize systems
 const renderer = new RenderSystem(display);
 
+ecs.addSystem(new PositionSystem(renderer));
 ecs.addSystem(new MovementSystem(renderer));
 ecs.addSystem(new LightSystem(renderer));
 
@@ -50,17 +55,14 @@ function update() {
 
   renderer.clear();
 
-  ecs.update(); // first pass to get all cell data,
-  ecs.update(); // second pass to calculate lighting
-
-  renderer.light = {};
+  ecs.update();
 };
 
 document.addEventListener('keyup', e => {
   var code = e.keyCode;
 
   player.handleInput(code);
-  
+
   update();
 });
 

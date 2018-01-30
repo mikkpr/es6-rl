@@ -1,4 +1,4 @@
-import ECS from '@fae/ecs';
+import ECS from 'mikkpr-ecs';
 import ROT from 'rot-js';
 
 import PositionComponent from '../components/position';
