@@ -1,37 +1,44 @@
-import {FloorTile, WallTile} from './entities/tile';
 import ROT from 'rot-js';
+
+import {FloorTile, WallTile} from './entities/tile';
 
 const createMap = (width, height) => {
   const tiles = [];
+  tiles.addItem = function(item) {
+    const {x, y, id} = item;
+    const idx = height * y + x;
+    if (tiles[idx]) {
+      tiles[idx].addItem(id);
+    }
+  };
   const map = (
-    '#####################' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#...................#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#####.#########.#####' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#...................#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#.........#.........#' +
-    '#####################'
+    'WWWWWWWWWWWWWWWWWWWWW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFFFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFIFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WWWWWFWWWWWWWWWFWWWWW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFFFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WFFFFFFFFFWFFFFFFFFFW' +
+    'WWWWWWWWWWWWWWWWWWWWW'
   ).split('');
 
-  map.forEach((char, idx) => {
+  map.forEach((tile, idx) => {
     const x = idx % width;
     const y = Math.floor((idx - x) / width);
-    const isWall = char === '#';
-    const tileType = isWall ? WallTile : FloorTile;
+    const tileType = tile === 'W' ? WallTile : FloorTile;
     tiles.push(new tileType({x, y}));
   });
   return tiles;

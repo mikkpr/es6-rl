@@ -4,6 +4,7 @@ import PositionComponent from '../components/position';
 import GlyphComponent from '../components/glyph';
 import CollisionComponent from '../components/collision';
 import MovementComponent from '../components/movement';
+import MaterialComponent from '../components/material';
 import LightComponent from '../components/light';
 
 class Furniture extends ECS.Entity.with(PositionComponent, GlyphComponent, CollisionComponent) {
@@ -39,5 +40,25 @@ export class Lamp extends Furniture.with(LightComponent) {
     this.enableLight = true;
     this.lightColor = color;
     this.lightRadius = radius;
+  }
+}
+
+export class FurnitureItem extends Furniture.with(MaterialComponent) {
+  constructor({position: {x, y, z}, glyph: {char, fg, bg}, properties}) {
+    super();
+
+    this.x = x;
+    this.y = y;
+    this.z = z;
+
+    this.char = char;
+    this.fg = fg;
+    this.bg = bg;
+
+    if (properties && properties.length && properties.length > 0) {
+      properties.forEach(prop => {
+        this.setProperty(prop);
+      });
+    }
   }
 }
